@@ -675,7 +675,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         <div className="wishes-container">
           <div className="wish-form-card">
             <form className="wish-form" onSubmit={handleWishSubmit}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div className="wish-inputs-grid">
                 <input
                   type="text"
                   placeholder="Nama Anda"

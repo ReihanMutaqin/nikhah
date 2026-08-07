@@ -567,8 +567,16 @@ button { cursor: pointer; border: none; background: none; }
   text-align: left;
   box-sizing: border-box;
 }
+.wish-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
 .wish-form { display: grid; gap: 16px; }
 .wish-form input, .wish-form select, .wish-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
   border: 1px solid #d4ded8;
   padding: 13px 16px;
   border-radius: 12px;
@@ -939,4 +947,9 @@ button { cursor: pointer; border: none; background: none; }
   .form-grid { grid-template-columns: 1fr; }
   .form-grid .wide { grid-column: auto; }
   .thumb-grid { grid-template-columns: 1fr 1fr; }
+  .wish-inputs-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .wish-form-card { padding: 20px 16px !important; border-radius: 16px !important; }
+  .wish-card { padding: 16px 14px !important; border-radius: 14px !important; }
+  .wish-header { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
+  .wish-msg { word-break: break-word !important; overflow-wrap: break-word !important; }
 }
