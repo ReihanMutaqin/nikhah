@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { defaultWedding, type CheckInItem, type WeddingData } from "../wedding-data";
 import { subscribeWeddingData, subscribeCheckIns, markGuestCheckInFirebase, deleteCheckInFromFirebase } from "../firebase";
-import { Html5Qrcode } from "html5-qrcode";
 
 export default function PalawariScanPage() {
   const [wedding, setWedding] = useState<WeddingData>(defaultWedding);
@@ -17,7 +16,7 @@ export default function PalawariScanPage() {
   // Camera Scanner State
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
-  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const html5QrCodeRef = useRef<any>(null);
 
   const couple = `${wedding.bride || "Aruna"} & ${wedding.groom || "Bima"}`;
 
@@ -64,9 +63,12 @@ export default function PalawariScanPage() {
     }
   };
 
-  // Start Live Camera Scanner
+  // Start Live Camera Scanner with Dynamic Client Import
   const startCameraScanner = async () => {
     try {
+      if (typeof window === "undefined") return;
+      const { Html5Qrcode } = await import("html5-qrcode");
+
       if (html5QrCodeRef.current) {
         await html5QrCodeRef.current.stop().catch(() => {});
       }
@@ -211,7 +213,7 @@ export default function PalawariScanPage() {
                   Tekan tombol di atas untuk mengaktifkan kamera HP penerima tamu.
                 </p>
                 <button onClick={startCameraScanner} className="button light" style={{ fontSize: "0.82rem" }}>
-                  ▶ Mula-i Scan Kamera
+                  ▶ Mulai Scan Kamera
                 </button>
               </div>
             )}
