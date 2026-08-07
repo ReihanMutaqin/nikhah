@@ -23,7 +23,7 @@ export default function PalawariScanPage() {
   const animationFrameRef = useRef<number | null>(null);
   const isCooldownRef = useRef(false);
 
-  const couple = `${wedding.bride || "Aruna"} & ${wedding.groom || "Bima"}`;
+  const couple = wedding.bride && wedding.groom ? `${wedding.bride} & ${wedding.groom}` : "Pasangan Mempelai";
 
   useEffect(() => {
     if (typeof document !== "undefined") {

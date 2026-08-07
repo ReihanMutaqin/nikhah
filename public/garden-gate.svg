@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 250" fill="none">
+  <g stroke="#6F745D" stroke-width="3" opacity=".82">
+    <path d="M40 240V60h820v180M80 240V83h740v157M120 240V108h660v132"/>
+    <path d="M40 60Q450-45 860 60M80 83Q450 8 820 83M120 108Q450 52 780 108"/>
+    <path d="M160 240V128M220 240V114M280 240V102M340 240V94M400 240V90M460 240V90M520 240V95M580 240V103M640 240V114M700 240V129"/>
+  </g>
+  <path d="M24 242h852" stroke="#B09A6B" stroke-width="6"/>
+</svg>
