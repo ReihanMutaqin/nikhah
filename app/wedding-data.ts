@@ -75,7 +75,7 @@ export const defaultWedding: WeddingData = {
   dateLong: "Sabtu, 12 Desember 2026",
   countdownDate: "2026-12-12T08:00:00",
   venue: "The Langham, SCBD Jakarta",
-  heroImage: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1800&q=88",
+  heroImage: "", // No sample unsplash photo!
   quote: "Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang.",
   quoteSource: "QS. Ar-Rum: 21",
   story: "Berawal dari pertemuan tak sengaja di akhir tahun, tumbuh percakapan yang penuh kehangatan, tawa yang menetap, dan keyakinan untuk saling melengkapi. Kini kami mantap melangkah dalam satu tujuan hidup.",
@@ -99,14 +99,7 @@ export const defaultWedding: WeddingData = {
       calendarEnd: "20261212T070000Z",
     },
   ],
-  gallery: [
-    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=85",
-    "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=1200&q=85",
-    "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1200&q=85",
-    "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=85",
-    "https://images.unsplash.com/photo-1519741347686-c1e0a0dfef79?auto=format&fit=crop&w=1200&q=85",
-    "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=85",
-  ],
+  gallery: [], // No sample unsplash gallery photos!
   musicUrl: "", // No default sample music!
   bankAccounts: [
     {

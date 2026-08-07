@@ -412,13 +412,17 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     );
   }
 
+  const coverBg = data?.heroImage
+    ? `linear-gradient(180deg, rgba(16,28,24,.3), rgba(16,28,24,.78)), url('${data.heroImage}')`
+    : `linear-gradient(180deg, #122820, #0c1914)`;
+
   // Covered View (Opening Envelope)
   if (!opened) {
     return (
       <main
         className="cover"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgba(16,28,24,.3), rgba(16,28,24,.78)), url('${data?.heroImage || defaultWedding.heroImage}')`,
+          backgroundImage: coverBg,
         }}
       >
         <FloralCornerOrnament position="tl" />
@@ -508,7 +512,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       <header
         className="invite-hero"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgba(12,25,20,.15), rgba(12,25,20,.65)), url('${data?.heroImage || defaultWedding.heroImage}')`,
+          backgroundImage: coverBg,
         }}
       >
         <div className="animated-fade-in">

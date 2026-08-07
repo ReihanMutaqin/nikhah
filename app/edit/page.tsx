@@ -169,17 +169,53 @@ export default function EditPage() {
     }
   };
 
-  const upload = (file: File, index?: number) => {
+  const uploadCoverPhoto = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      patch("heroImage", String(reader.result));
+      showToast("Foto sampul utama berhasil dipilih! Klik 'Simpan Perubahan' di kanan atas.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const replaceGalleryPhoto = (file: File, index: number) => {
     const reader = new FileReader();
     reader.onload = () => {
       const url = String(reader.result);
-      if (typeof index === "number") {
-        patch("gallery", data.gallery.map((x, i) => (i === index ? url : x)));
-      } else {
-        patch("heroImage", url);
-      }
+      setData((d) => ({
+        ...d,
+        gallery: d.gallery.map((x, i) => (i === index ? url : x)),
+      }));
+      showToast(`Foto galeri #${index + 1} berhasil diganti.`);
     };
     reader.readAsDataURL(file);
+  };
+
+  const appendGalleryPhotos = (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (!fileArray.length) return;
+    showToast(`Memproses ${fileArray.length} foto...`);
+
+    let count = 0;
+    const newPhotos: string[] = [];
+
+    fileArray.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          newPhotos.push(String(reader.result));
+        }
+        count++;
+        if (count === fileArray.length) {
+          setData((d) => ({
+            ...d,
+            gallery: [...d.gallery, ...newPhotos],
+          }));
+          showToast(`✓ Berhasil menambahkan ${newPhotos.length} foto ke galeri! Klik 'Simpan Perubahan' di kanan atas.`);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const uploadAudio = (file?: File) => {
@@ -859,7 +895,7 @@ export default function EditPage() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
+                onChange={(e) => e.target.files?.[0] && uploadCoverPhoto(e.target.files[0])}
                 style={{ display: "none" }}
               />
             </label>
@@ -890,7 +926,7 @@ export default function EditPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], i)}
+                    onChange={(e) => e.target.files?.[0] && replaceGalleryPhoto(e.target.files[0], i)}
                     style={{ display: "none" }}
                   />
                 </label>
@@ -912,12 +948,7 @@ export default function EditPage() {
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={(e) => {
-                  const files = e.target.files;
-                  if (files && files.length > 0) {
-                    Array.from(files).forEach((file) => upload(file));
-                  }
-                }}
+                onChange={(e) => e.target.files && appendGalleryPhotos(e.target.files)}
                 style={{ display: "none" }}
               />
             </label>
