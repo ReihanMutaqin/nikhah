@@ -169,53 +169,73 @@ export default function EditPage() {
     }
   };
 
-  const uploadCoverPhoto = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      patch("heroImage", String(reader.result));
-      showToast("Foto sampul utama berhasil dipilih! Klik 'Simpan Perubahan' di kanan atas.");
-    };
-    reader.readAsDataURL(file);
+  // Automatic Client-side Image Compression (Prevents Firebase 'Write too large' 256KB error)
+  const compressImageFile = (file: File, maxWidth = 1200, quality = 0.72): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(e.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => resolve(e.target?.result as string);
+      };
+      reader.onerror = () => resolve("");
+    });
   };
 
-  const replaceGalleryPhoto = (file: File, index: number) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = String(reader.result);
-      setData((d) => ({
-        ...d,
-        gallery: d.gallery.map((x, i) => (i === index ? url : x)),
-      }));
-      showToast(`Foto galeri #${index + 1} berhasil diganti.`);
-    };
-    reader.readAsDataURL(file);
+  const uploadCoverPhoto = async (file: File) => {
+    showToast("Mengoptimalkan foto sampul...");
+    const compressed = await compressImageFile(file, 1400, 0.75);
+    patch("heroImage", compressed);
+    showToast("✓ Foto sampul berhasil diperbarui! Klik 'Simpan Perubahan' di atas.");
   };
 
-  const appendGalleryPhotos = (files: FileList | File[]) => {
+  const replaceGalleryPhoto = async (file: File, index: number) => {
+    showToast("Mengoptimalkan foto galeri...");
+    const compressed = await compressImageFile(file, 1200, 0.72);
+    setData((d) => ({
+      ...d,
+      gallery: d.gallery.map((x, i) => (i === index ? compressed : x)),
+    }));
+    showToast(`✓ Foto galeri #${index + 1} berhasil diganti.`);
+  };
+
+  const appendGalleryPhotos = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     if (!fileArray.length) return;
-    showToast(`Memproses ${fileArray.length} foto...`);
+    showToast(`Mengompres & memproses ${fileArray.length} foto...`);
 
-    let count = 0;
-    const newPhotos: string[] = [];
+    const compressedList: string[] = [];
+    for (const file of fileArray) {
+      const res = await compressImageFile(file, 1200, 0.72);
+      if (res) compressedList.push(res);
+    }
 
-    fileArray.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (reader.result) {
-          newPhotos.push(String(reader.result));
-        }
-        count++;
-        if (count === fileArray.length) {
-          setData((d) => ({
-            ...d,
-            gallery: [...d.gallery, ...newPhotos],
-          }));
-          showToast(`✓ Berhasil menambahkan ${newPhotos.length} foto ke galeri! Klik 'Simpan Perubahan' di kanan atas.`);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    if (compressedList.length > 0) {
+      setData((d) => ({
+        ...d,
+        gallery: [...d.gallery, ...compressedList],
+      }));
+      showToast(`✓ Berhasil menambahkan ${compressedList.length} foto ke galeri! Klik 'Simpan Perubahan' di kanan atas.`);
+    }
   };
 
   const uploadAudio = (file?: File) => {
