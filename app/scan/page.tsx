@@ -2,9 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { defaultWedding, type CheckInItem, type WeddingData } from "../wedding-data";
 import { subscribeWeddingData, subscribeCheckIns, markGuestCheckInFirebase, deleteCheckInFromFirebase } from "../firebase";
+import { Html5Qrcode } from "html5-qrcode";
 
 export default function PalawariScanPage() {
   const [wedding, setWedding] = useState<WeddingData>(defaultWedding);
@@ -12,6 +13,11 @@ export default function PalawariScanPage() {
   const [search, setSearch] = useState("");
   const [manualInput, setManualInput] = useState("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Camera Scanner State
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [lastScanned, setLastScanned] = useState<string | null>(null);
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   const couple = `${wedding.bride || "Aruna"} & ${wedding.groom || "Bima"}`;
 
@@ -31,24 +37,68 @@ export default function PalawariScanPage() {
     return () => {
       unsubWedding();
       unsubCheckIns();
+      if (html5QrCodeRef.current) {
+        html5QrCodeRef.current.stop().catch(() => {});
+      }
     };
   }, []);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
+    setTimeout(() => setToastMsg(null), 3500);
   };
 
   const handleCheckIn = async (guestName: string, isManual = false) => {
     const slug = encodeURIComponent(guestName.toLowerCase().replace(/\s+/g, "-"));
-    const existing = checkIns.find((c) => (c.slug || "").toLowerCase() === slug.toLowerCase() || c.guestName.toLowerCase() === guestName.toLowerCase());
+    const existing = checkIns.find(
+      (c) => (c.slug || "").toLowerCase() === slug.toLowerCase() || c.guestName.toLowerCase() === guestName.toLowerCase()
+    );
 
     if (existing) {
       await deleteCheckInFromFirebase(existing.id);
       showToast(`Batal Check-In: ${guestName}`);
     } else {
       await markGuestCheckInFirebase(guestName, isManual);
-      showToast(`✓ CHECK-IN SUCCESS: ${guestName} (HADIR)`);
+      setLastScanned(guestName);
+      showToast(`🎉 ✓ SCAN BERHASIL: ${guestName} (SUDAH HADIR)`);
+    }
+  };
+
+  // Start Live Camera Scanner
+  const startCameraScanner = async () => {
+    try {
+      if (html5QrCodeRef.current) {
+        await html5QrCodeRef.current.stop().catch(() => {});
+      }
+
+      const scanner = new Html5Qrcode("qr-reader");
+      html5QrCodeRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        (decodedText) => {
+          handleCheckIn(decodedText);
+        },
+        () => {}
+      );
+      setIsCameraActive(true);
+      showToast("Kamera aktif! Arahkan ke QR Code di HP Tamu.");
+    } catch (err: any) {
+      console.error("Camera error:", err);
+      showToast(`Gagal membuka kamera: ${err?.message || "Izin kamera tidak diberikan."}`);
+    }
+  };
+
+  // Stop Live Camera Scanner
+  const stopCameraScanner = async () => {
+    if (html5QrCodeRef.current) {
+      try {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current.clear();
+      } catch (e) {}
+      setIsCameraActive(false);
+      showToast("Kamera dinonaktifkan.");
     }
   };
 
@@ -88,7 +138,7 @@ export default function PalawariScanPage() {
             Presensi Check-In {couple}
           </h1>
           <p style={{ fontSize: "0.84rem", color: "#b8c9c0", margin: "0 0 20px" }}>
-            Halaman khusus petugas penerima tamu di venue. Semua presensi tersinkron secara live.
+            Scan QR Code di HP Tamu menggunakan kamera HP ini. Data otomatis tersinkron secara live.
           </p>
 
           <div
@@ -114,13 +164,73 @@ export default function PalawariScanPage() {
           </div>
         </header>
 
+        {/* LIVE CAMERA QR SCANNER BOX */}
+        <div style={{ background: "white", padding: "24px", borderRadius: "18px", border: "2px solid var(--forest)", marginBottom: "20px", boxShadow: "var(--shadow-lg)", textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ font: "500 1.3rem 'Playfair Display', serif", margin: 0, color: "var(--forest)" }}>
+              📷 Kamera Scanner QR Code
+            </h3>
+            {isCameraActive ? (
+              <button
+                onClick={stopCameraScanner}
+                style={{ background: "#fee2e2", color: "#991b1b", padding: "8px 16px", borderRadius: "99px", fontSize: "0.78rem", fontWeight: "600" }}
+              >
+                ⏹ Matikan Kamera
+              </button>
+            ) : (
+              <button
+                onClick={startCameraScanner}
+                className="button primary"
+                style={{ padding: "10px 20px", borderRadius: "99px", fontSize: "0.82rem" }}
+              >
+                📷 Buka Kamera Scanner
+              </button>
+            )}
+          </div>
+
+          {/* Camera Viewport Container */}
+          <div
+            id="qr-reader"
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              minHeight: isCameraActive ? "300px" : "180px",
+              margin: "0 auto",
+              background: "#182c23",
+              borderRadius: "16px",
+              overflow: "hidden",
+              display: "grid",
+              placeItems: "center",
+              color: "white",
+            }}
+          >
+            {!isCameraActive && (
+              <div style={{ padding: "30px 20px", textAlign: "center" }}>
+                <p style={{ fontSize: "2.2rem", margin: "0 0 10px" }}>📱 Scanning</p>
+                <p style={{ fontSize: "0.88rem", color: "#a8bdb3", margin: "0 0 16px" }}>
+                  Tekan tombol di atas untuk mengaktifkan kamera HP penerima tamu.
+                </p>
+                <button onClick={startCameraScanner} className="button light" style={{ fontSize: "0.82rem" }}>
+                  ▶ Mula-i Scan Kamera
+                </button>
+              </div>
+            )}
+          </div>
+
+          {lastScanned && (
+            <div style={{ marginTop: "16px", padding: "14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "12px", color: "#166534" }}>
+              🎉 <strong>Tamu Terakhir Ter-scan:</strong> {lastScanned} (SUDAH HADIR ✓)
+            </div>
+          )}
+        </div>
+
         {/* Quick Check-In Manual Input */}
         <div style={{ background: "white", padding: "24px", borderRadius: "18px", border: "1px solid var(--line)", marginBottom: "20px", boxShadow: "var(--shadow)" }}>
           <h3 style={{ font: "500 1.2rem 'Playfair Display', serif", margin: "0 0 8px" }}>
-            ⚡ Check-In Cepat Nama Tamu Baru / Link Manual
+            ⚡ Check-In Cepat / Tamu Link Manual
           </h3>
           <p style={{ fontSize: "0.8rem", color: "#687970", margin: "0 0 14px" }}>
-            Ketikkan nama tamu (misal: <strong>Enjel &amp; Suami</strong> atau <strong>Bapak Ahmad</strong>) jika tidak ada di daftar:
+            Ketikkan nama tamu (misal: <strong>Enjel &amp; Suami</strong>) jika QR Code tidak bisa di-scan:
           </p>
 
           <form onSubmit={handleManualAdd} style={{ display: "flex", gap: "10px" }}>
@@ -164,7 +274,7 @@ export default function PalawariScanPage() {
           />
         </div>
 
-        {/* List of Recent Check-Ins & All Guests */}
+        {/* List of Recent Check-Ins */}
         <div style={{ background: "white", borderRadius: "18px", border: "1px solid var(--line)", padding: "20px", boxShadow: "var(--shadow)" }}>
           <h4 style={{ margin: "0 0 16px", font: "500 1.1rem 'Playfair Display', serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>📋 Daftar Presensi Lokasi</span>
@@ -174,7 +284,7 @@ export default function PalawariScanPage() {
           {checkIns.length === 0 ? (
             <div style={{ textAlign: "center", padding: "35px 20px", color: "#889990" }}>
               <p style={{ margin: "0 0 6px", fontSize: "1.1rem" }}>📌 Belum ada tamu yang di-check in.</p>
-              <small>Gunakan kolom cari di atas atau ketik nama tamu untuk mencentang kehadiran.</small>
+              <small>Gunakan Kamera Scanner di atas atau ketik nama tamu untuk mencentang kehadiran.</small>
             </div>
           ) : (
             <div style={{ display: "grid", gap: "12px" }}>
