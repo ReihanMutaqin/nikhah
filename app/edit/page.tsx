@@ -6,16 +6,36 @@ import { useEffect, useState } from "react";
 import { defaultWedding, defaultWishes, type BankAccount, type RSVPItem, type WeddingData, type WishItem } from "../wedding-data";
 import { RSVP_STORAGE_KEY, STORAGE_KEY, WISHES_STORAGE_KEY } from "../WeddingInvitation";
 
+type BulkGuest = {
+  id: string;
+  name: string;
+  slug: string;
+  url: string;
+  waText: string;
+  waUrl: string;
+};
+
 export default function EditorPage() {
   const [data, setData] = useState<WeddingData>(defaultWedding);
   const [rsvps, setRsvps] = useState<RSVPItem[]>([]);
   const [wishes, setWishes] = useState<WishItem[]>(defaultWishes);
   const [saved, setSaved] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Security / PIN Auth State
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [inputPin, setInputPin] = useState("");
   const [pinError, setPinError] = useState(false);
+
+  // Bulk Invitation Generator State
+  const [bulkInput, setBulkInput] = useState(
+    "Bapak Ahmad & Keluarga\nIbu Siti & Suami\nDimas & Partner\nSahabat Alumnus SMA 1\nRian Hidayat"
+  );
+  const [domainUrl, setDomainUrl] = useState("https://nikhah.vercel.app");
+  const [waTemplate, setWaTemplate] = useState(
+    "Kepada Yth. {nama}\n\nTanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:\n\n{mempelai}\n\nBerikut tautan undangan personal Anda:\n{link}\n\nMerupakan suatu kehormatan & kebahagiaan bagi kami apabila Anda berkenan hadir dan memberikan doa restu.\n\nTerima kasih."
+  );
+  const [generatedGuests, setGeneratedGuests] = useState<BulkGuest[]>([]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -40,7 +60,11 @@ export default function EditorPage() {
         try { setWishes(JSON.parse(savedWishes)); } catch (e) { console.warn(e); }
       }
 
-      // Check if already authenticated in this session
+      // Detect current origin for domain URL
+      if (typeof window !== "undefined") {
+        setDomainUrl(window.location.origin);
+      }
+
       const auth = sessionStorage.getItem("ruang-temu-auth");
       if (auth === "true") {
         setIsAuthorized(true);
@@ -48,6 +72,11 @@ export default function EditorPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,11 +120,69 @@ export default function EditorPage() {
   };
 
   const exportData = () => {
-    const fullData = { wedding: data, rsvps, wishes };
+    const fullData = { wedding: data, rsvps, wishes, bulkGuests: generatedGuests };
     const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "ruang-temu-wedding-export.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  // Generate Bulk Links & Messages
+  const handleGenerateBulk = () => {
+    const lines = bulkInput
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    const coupleName = `${data.bride} & ${data.groom}`;
+
+    const list: BulkGuest[] = lines.map((name, idx) => {
+      const slug = encodeURIComponent(name.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "dan"));
+      const link = `${domainUrl}/${slug}`;
+      const waText = waTemplate
+        .replace(/{nama}/g, name)
+        .replace(/{mempelai}/g, coupleName)
+        .replace(/{link}/g, link);
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+
+      return {
+        id: `guest-${idx}-${Date.now()}`,
+        name,
+        slug,
+        url: link,
+        waText,
+        waUrl,
+      };
+    });
+
+    setGeneratedGuests(list);
+    showToast(`Berhasil me-generate ${list.length} link undangan masal!`);
+  };
+
+  const copyAllLinks = () => {
+    if (generatedGuests.length === 0) return;
+    const text = generatedGuests.map((g) => `${g.name}: ${g.url}`).join("\n");
+    navigator.clipboard.writeText(text);
+    showToast("Semua tautan berhasil disalin ke clipboard!");
+  };
+
+  const copySingleText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    showToast(`${label} disalin!`);
+  };
+
+  const exportBulkCsv = () => {
+    if (generatedGuests.length === 0) return;
+    let csv = "Nama Tamu,Tautan Personal,Link WhatsApp\n";
+    generatedGuests.forEach((g) => {
+      csv += `"${g.name.replace(/"/g, '""')}","${g.url}","${g.waUrl}"\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `daftar-undangan-masal-${data.bride}-${data.groom}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -187,7 +274,7 @@ export default function EditorPage() {
           </p>
           <h2 style={{ font: "500 2rem 'Playfair Display', serif", margin: "10px 0 6px" }}>Akses Terkunci</h2>
           <p style={{ fontSize: "0.85rem", color: "#b7c7c0", margin: "0 0 25px", lineHeight: "1.6" }}>
-            Masukkan PIN Keamanan untuk mengakses ruang edit &amp; kelola data undangan.
+            Masukkan PIN Keamanan untuk mengakses ruang edit &amp; generator undangan.
           </p>
 
           <form onSubmit={handleLogin} style={{ display: "grid", gap: "16px" }}>
@@ -233,6 +320,8 @@ export default function EditorPage() {
   // Render Authorized Editor Dashboard
   return (
     <main className="editor-shell">
+      {toastMsg && <div className="toast-notification">✓ {toastMsg}</div>}
+
       <aside className="editor-side">
         <Link className="brand" href="/">
           <span>RT</span> Ruang Temu
@@ -240,9 +329,10 @@ export default function EditorPage() {
         <div>
           <p>ADMIN CONTROL PANEL</p>
           <h1>Manajer Undangan</h1>
-          <span>Perubahan tersimpan di browser ini. Password/PIN dilindungi.</span>
+          <span>Perubahan tersimpan di browser ini. Dilengkapi Generator Undangan Masal.</span>
         </div>
         <nav>
+          <a href="#masal">⚡ Generator Undangan Masal</a>
           <a href="#utama">1. Informasi Mempelai</a>
           <a href="#keamanan">2. Keamanan PIN Admin</a>
           <a href="#acara-edit">3. Detail Acara</a>
@@ -273,7 +363,7 @@ export default function EditorPage() {
         <div className="editor-top">
           <div>
             <p className="eyebrow">WEDDING CONTENT MANAGER</p>
-            <h2>Pengaturan Undangan Protected</h2>
+            <h2>Pengaturan Undangan &amp; Bulk Generator</h2>
           </div>
           <div className="editor-actions">
             <button onClick={exportData}>💾 Ekspor Data JSON</button>
@@ -281,6 +371,131 @@ export default function EditorPage() {
               {saved ? "Tersimpan ✓" : "Simpan Perubahan"}
             </button>
           </div>
+        </div>
+
+        {/* BULK INVITATION LINK & WA GENERATOR */}
+        <div className="form-card" id="masal" style={{ border: "2px solid var(--gold)" }}>
+          <div className="form-title">
+            <span style={{ fontSize: "1.5rem" }}>⚡</span>
+            <div>
+              <h3 style={{ color: "var(--forest)" }}>Generator Undangan Masal (Bulk Links &amp; WhatsApp)</h3>
+              <p>Masukkan puluhan/ratusan nama tamu sekaligus (satu nama per baris). Sistem akan otomatis membuat link personal &amp; draf pesan WhatsApp siap kirim!</p>
+            </div>
+          </div>
+
+          <div className="form-grid">
+            <label className="wide">
+              Domain Utama Web Undangan
+              <input value={domainUrl} onChange={(e) => setDomainUrl(e.target.value)} placeholder="https://nikhah.vercel.app" />
+            </label>
+
+            <label className="wide">
+              Daftar Nama Tamu (Satu Nama Per Baris)
+              <textarea
+                rows={6}
+                value={bulkInput}
+                onChange={(e) => setBulkInput(e.target.value)}
+                placeholder="Contoh:&#10;Bapak Ahmad &amp; Keluarga&#10;Ibu Siti&#10;Dimas &amp; Partner"
+              />
+            </label>
+
+            <label className="wide">
+              Template Pesan WhatsApp (Gunakan placeholder: &#123;nama&#125;, &#123;mempelai&#125;, &#123;link&#125;)
+              <textarea rows={5} value={waTemplate} onChange={(e) => setWaTemplate(e.target.value)} />
+            </label>
+          </div>
+
+          <button
+            type="button"
+            className="button primary"
+            onClick={handleGenerateBulk}
+            style={{ width: "100%", marginTop: "20px", padding: "16px" }}
+          >
+            ⚡ Generate Semua Link &amp; Pesan WA Sekaligus
+          </button>
+
+          {generatedGuests.length > 0 && (
+            <div style={{ marginTop: "30px", borderTop: "1px dashed var(--line)", paddingTop: "25px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <h4 style={{ margin: 0, font: "500 1.3rem 'Playfair Display', serif" }}>
+                    Hasil Generator ({generatedGuests.length} Tamu)
+                  </h4>
+                  <span style={{ fontSize: "0.78rem", color: "#6a7b72" }}>Tautan siap dikirim langsung via WhatsApp atau disalin.</span>
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button type="button" onClick={copyAllLinks} className="button secondary" style={{ fontSize: "0.78rem", padding: "10px 16px" }}>
+                    📋 Salin Semua Link
+                  </button>
+                  <button type="button" onClick={exportBulkCsv} className="button secondary" style={{ fontSize: "0.78rem", padding: "10px 16px" }}>
+                    📊 Ekspor CSV / Excel
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: "14px", maxHeight: "500px", overflowY: "auto", paddingRight: "4px" }}>
+                {generatedGuests.map((g, idx) => (
+                  <div
+                    key={g.id}
+                    style={{
+                      background: "#fafcfb",
+                      border: "1px solid var(--line)",
+                      borderRadius: "12px",
+                      padding: "16px 20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "15px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: "220px" }}>
+                      <span style={{ fontSize: "0.7rem", color: "var(--gold-dark)", fontWeight: "600" }}>#{idx + 1}</span>
+                      <h5 style={{ margin: "2px 0 4px", fontSize: "1.05rem", color: "var(--forest)" }}>{g.name}</h5>
+                      <a href={g.url} target="_blank" rel="noreferrer" style={{ fontSize: "0.8rem", color: "#547365", textDecoration: "underline", wordBreak: "break-all" }}>
+                        {g.url}
+                      </a>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        onClick={() => copySingleText(g.url, "Link undangan")}
+                        style={{ padding: "9px 14px", background: "white", border: "1px solid #c4d4cc", borderRadius: "8px", fontSize: "0.76rem", fontWeight: "600" }}
+                      >
+                        📋 Salin Link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copySingleText(g.waText, "Pesan WA")}
+                        style={{ padding: "9px 14px", background: "white", border: "1px solid #c4d4cc", borderRadius: "8px", fontSize: "0.76rem", fontWeight: "600" }}
+                      >
+                        💬 Salin Pesan WA
+                      </button>
+                      <a
+                        href={g.waUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          padding: "9px 16px",
+                          background: "#25D366",
+                          color: "white",
+                          borderRadius: "8px",
+                          fontSize: "0.76rem",
+                          fontWeight: "600",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                        }}
+                      >
+                        📲 Kirim WA ↗
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 1. Informasi Utama */}
