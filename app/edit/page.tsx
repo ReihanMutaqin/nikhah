@@ -132,17 +132,17 @@ export default function EditorPage() {
 
   const save = async () => {
     setSavingLoading(true);
-    // Save to Firebase Realtime Database
-    const success = await saveWeddingDataToFirebase(data);
+    // Save to Firebase Realtime Database & Firestore
+    const res = await saveWeddingDataToFirebase(data);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setSavingLoading(false);
 
-    if (success) {
+    if (res.success) {
       setSaved(true);
       showToast("Tersimpan di Cloud Firebase! Semua HP & Perangkat otomatis ter-update.");
       setTimeout(() => setSaved(false), 2500);
     } else {
-      showToast("Gagal menyimpan ke Firebase. Cek koneksi internet.");
+      showToast(`Gagal menyimpan: ${res.message || "Permission denied"}. Harap aktifkan Rules di Firebase Console!`);
     }
   };
 

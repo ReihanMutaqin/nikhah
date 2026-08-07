@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getDatabase, ref, onValue, set, get, child } from "firebase/database";
+import { getDatabase, ref, onValue, set } from "firebase/database";
+import { getFirestore, doc, onSnapshot, setDoc, collection, deleteDoc } from "firebase/firestore";
 import type { WeddingData, WishItem, RSVPItem } from "./wedding-data";
 
 const firebaseConfig = {
@@ -14,85 +15,144 @@ const firebaseConfig = {
 
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-export const db = getDatabase(app);
 
-// REALTIME LISTENERS & WRITERS
+export const rtdb = getDatabase(app);
+export const firestore = getFirestore(app);
+
+// REALTIME LISTENERS & WRITERS (Dual Support: Realtime DB + Firestore)
 
 // 1. Wedding Data Sync
 export function subscribeWeddingData(callback: (data: WeddingData | null) => void) {
-  const weddingRef = ref(db, "weddingData");
-  return onValue(
-    weddingRef,
+  // Listen via Firestore first
+  const unsubFirestore = onSnapshot(
+    doc(firestore, "wedding", "mainData"),
+    (snapshot) => {
+      if (snapshot.exists()) {
+        callback(snapshot.data() as WeddingData);
+      }
+    },
+    (err) => {
+      console.warn("Firestore listener warning:", err);
+    }
+  );
+
+  // Also listen via Realtime DB as secondary
+  const rtdbRef = ref(rtdb, "weddingData");
+  const unsubRtdb = onValue(
+    rtdbRef,
     (snapshot) => {
       if (snapshot.exists()) {
         callback(snapshot.val());
-      } else {
-        callback(null);
       }
     },
-    (error) => {
-      console.warn("Firebase Realtime DB read error:", error);
+    (err) => {
+      console.warn("Realtime DB listener warning:", err);
     }
   );
+
+  return () => {
+    unsubFirestore();
+    unsubRtdb();
+  };
 }
 
-export async function saveWeddingDataToFirebase(data: WeddingData) {
+export async function saveWeddingDataToFirebase(data: WeddingData): Promise<{ success: boolean; message?: string }> {
+  let successCount = 0;
+  let lastError = "";
+
+  // 1. Try Firestore
   try {
-    const weddingRef = ref(db, "weddingData");
-    await set(weddingRef, data);
-    return true;
-  } catch (error) {
-    console.error("Failed to save to Firebase:", error);
-    return false;
+    await setDoc(doc(firestore, "wedding", "mainData"), data);
+    successCount++;
+  } catch (error: any) {
+    console.error("Firestore save error:", error);
+    lastError = error?.message || String(error);
+  }
+
+  // 2. Try Realtime DB
+  try {
+    await set(ref(rtdb, "weddingData"), data);
+    successCount++;
+  } catch (error: any) {
+    console.error("Realtime DB save error:", error);
+    if (!lastError) lastError = error?.message || String(error);
+  }
+
+  if (successCount > 0) {
+    return { success: true };
+  } else {
+    return { success: false, message: lastError };
   }
 }
 
 // 2. Wishes Sync
 export function subscribeWishes(callback: (wishes: WishItem[]) => void) {
-  const wishesRef = ref(db, "wishes");
-  return onValue(
-    wishesRef,
+  const unsubFirestore = onSnapshot(
+    collection(firestore, "wishes"),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const list: WishItem[] = [];
+        snapshot.forEach((d) => list.push({ ...(d.data() as WishItem), id: d.id }));
+        callback(list.reverse());
+      }
+    },
+    (err) => console.warn(err)
+  );
+
+  const unsubRtdb = onValue(
+    ref(rtdb, "wishes"),
     (snapshot) => {
       if (snapshot.exists()) {
         const val = snapshot.val();
-        // Convert object dictionary or array to array
         const list: WishItem[] = Array.isArray(val)
           ? val.filter(Boolean)
           : Object.keys(val).map((k) => ({ ...val[k], id: k }));
         callback(list.reverse());
-      } else {
-        callback([]);
       }
     },
-    (error) => {
-      console.warn("Firebase wishes read error:", error);
-    }
+    (err) => console.warn(err)
   );
+
+  return () => {
+    unsubFirestore();
+    unsubRtdb();
+  };
 }
 
 export async function addWishToFirebase(wish: WishItem) {
   try {
-    const wishRef = ref(db, `wishes/${wish.id}`);
-    await set(wishRef, wish);
-  } catch (error) {
-    console.error("Failed to add wish to Firebase:", error);
-  }
+    await setDoc(doc(firestore, "wishes", wish.id), wish);
+  } catch (e) {}
+  try {
+    await set(ref(rtdb, `wishes/${wish.id}`), wish);
+  } catch (e) {}
 }
 
 export async function deleteWishFromFirebase(wishId: string) {
   try {
-    const wishRef = ref(db, `wishes/${wishId}`);
-    await set(wishRef, null);
-  } catch (error) {
-    console.error("Failed to delete wish from Firebase:", error);
-  }
+    await deleteDoc(doc(firestore, "wishes", wishId));
+  } catch (e) {}
+  try {
+    await set(ref(rtdb, `wishes/${wishId}`), null);
+  } catch (e) {}
 }
 
 // 3. RSVP Sync
 export function subscribeRSVPs(callback: (rsvps: RSVPItem[]) => void) {
-  const rsvpRef = ref(db, "rsvps");
-  return onValue(
-    rsvpRef,
+  const unsubFirestore = onSnapshot(
+    collection(firestore, "rsvps"),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const list: RSVPItem[] = [];
+        snapshot.forEach((d) => list.push({ ...(d.data() as RSVPItem), id: d.id }));
+        callback(list.reverse());
+      }
+    },
+    (err) => console.warn(err)
+  );
+
+  const unsubRtdb = onValue(
+    ref(rtdb, "rsvps"),
     (snapshot) => {
       if (snapshot.exists()) {
         const val = snapshot.val();
@@ -100,30 +160,31 @@ export function subscribeRSVPs(callback: (rsvps: RSVPItem[]) => void) {
           ? val.filter(Boolean)
           : Object.keys(val).map((k) => ({ ...val[k], id: k }));
         callback(list.reverse());
-      } else {
-        callback([]);
       }
     },
-    (error) => {
-      console.warn("Firebase RSVP read error:", error);
-    }
+    (err) => console.warn(err)
   );
+
+  return () => {
+    unsubFirestore();
+    unsubRtdb();
+  };
 }
 
 export async function addRSVPToFirebase(rsvp: RSVPItem) {
   try {
-    const rsvpRef = ref(db, `rsvps/${rsvp.id}`);
-    await set(rsvpRef, rsvp);
-  } catch (error) {
-    console.error("Failed to add RSVP to Firebase:", error);
-  }
+    await setDoc(doc(firestore, "rsvps", rsvp.id), rsvp);
+  } catch (e) {}
+  try {
+    await set(ref(rtdb, `rsvps/${rsvp.id}`), rsvp);
+  } catch (e) {}
 }
 
 export async function deleteRSVPFromFirebase(rsvpId: string) {
   try {
-    const rsvpRef = ref(db, `rsvps/${rsvpId}`);
-    await set(rsvpRef, null);
-  } catch (error) {
-    console.error("Failed to delete RSVP from Firebase:", error);
-  }
+    await deleteDoc(doc(firestore, "rsvps", rsvpId));
+  } catch (e) {}
+  try {
+    await set(ref(rtdb, `rsvps/${rsvpId}`), null);
+  } catch (e) {}
 }
