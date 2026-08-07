@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getDatabase, ref, onValue, set } from "firebase/database";
 import { getFirestore, doc, onSnapshot, setDoc, collection, deleteDoc } from "firebase/firestore";
-import type { WeddingData, WishItem, RSVPItem } from "./wedding-data";
+import type { WeddingData, WishItem, RSVPItem, CheckInItem } from "./wedding-data";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
@@ -23,7 +23,6 @@ export const firestore = getFirestore(app);
 
 // 1. Wedding Data Sync
 export function subscribeWeddingData(callback: (data: WeddingData | null) => void) {
-  // Listen via Firestore first
   const unsubFirestore = onSnapshot(
     doc(firestore, "wedding", "mainData"),
     (snapshot) => {
@@ -31,23 +30,17 @@ export function subscribeWeddingData(callback: (data: WeddingData | null) => voi
         callback(snapshot.data() as WeddingData);
       }
     },
-    (err) => {
-      console.warn("Firestore listener warning:", err);
-    }
+    (err) => console.warn("Firestore listener warning:", err)
   );
 
-  // Also listen via Realtime DB as secondary
-  const rtdbRef = ref(rtdb, "weddingData");
   const unsubRtdb = onValue(
-    rtdbRef,
+    ref(rtdb, "weddingData"),
     (snapshot) => {
       if (snapshot.exists()) {
         callback(snapshot.val());
       }
     },
-    (err) => {
-      console.warn("Realtime DB listener warning:", err);
-    }
+    (err) => console.warn("Realtime DB listener warning:", err)
   );
 
   return () => {
@@ -60,21 +53,17 @@ export async function saveWeddingDataToFirebase(data: WeddingData): Promise<{ su
   let successCount = 0;
   let lastError = "";
 
-  // 1. Try Firestore
   try {
     await setDoc(doc(firestore, "wedding", "mainData"), data);
     successCount++;
   } catch (error: any) {
-    console.error("Firestore save error:", error);
     lastError = error?.message || String(error);
   }
 
-  // 2. Try Realtime DB
   try {
     await set(ref(rtdb, "weddingData"), data);
     successCount++;
   } catch (error: any) {
-    console.error("Realtime DB save error:", error);
     if (!lastError) lastError = error?.message || String(error);
   }
 
@@ -120,21 +109,13 @@ export function subscribeWishes(callback: (wishes: WishItem[]) => void) {
 }
 
 export async function addWishToFirebase(wish: WishItem) {
-  try {
-    await setDoc(doc(firestore, "wishes", wish.id), wish);
-  } catch (e) {}
-  try {
-    await set(ref(rtdb, `wishes/${wish.id}`), wish);
-  } catch (e) {}
+  try { await setDoc(doc(firestore, "wishes", wish.id), wish); } catch (e) {}
+  try { await set(ref(rtdb, `wishes/${wish.id}`), wish); } catch (e) {}
 }
 
 export async function deleteWishFromFirebase(wishId: string) {
-  try {
-    await deleteDoc(doc(firestore, "wishes", wishId));
-  } catch (e) {}
-  try {
-    await set(ref(rtdb, `wishes/${wishId}`), null);
-  } catch (e) {}
+  try { await deleteDoc(doc(firestore, "wishes", wishId)); } catch (e) {}
+  try { await set(ref(rtdb, `wishes/${wishId}`), null); } catch (e) {}
 }
 
 // 3. RSVP Sync
@@ -172,19 +153,68 @@ export function subscribeRSVPs(callback: (rsvps: RSVPItem[]) => void) {
 }
 
 export async function addRSVPToFirebase(rsvp: RSVPItem) {
-  try {
-    await setDoc(doc(firestore, "rsvps", rsvp.id), rsvp);
-  } catch (e) {}
-  try {
-    await set(ref(rtdb, `rsvps/${rsvp.id}`), rsvp);
-  } catch (e) {}
+  try { await setDoc(doc(firestore, "rsvps", rsvp.id), rsvp); } catch (e) {}
+  try { await set(ref(rtdb, `rsvps/${rsvp.id}`), rsvp); } catch (e) {}
 }
 
 export async function deleteRSVPFromFirebase(rsvpId: string) {
-  try {
-    await deleteDoc(doc(firestore, "rsvps", rsvpId));
-  } catch (e) {}
-  try {
-    await set(ref(rtdb, `rsvps/${rsvpId}`), null);
-  } catch (e) {}
+  try { await deleteDoc(doc(firestore, "rsvps", rsvpId)); } catch (e) {}
+  try { await set(ref(rtdb, `rsvps/${rsvpId}`), null); } catch (e) {}
+}
+
+// 4. Palawari Check-In Sync (Scan Presensi)
+export function subscribeCheckIns(callback: (checkIns: CheckInItem[]) => void) {
+  const unsubFirestore = onSnapshot(
+    collection(firestore, "checkIns"),
+    (snapshot) => {
+      if (!snapshot.empty) {
+        const list: CheckInItem[] = [];
+        snapshot.forEach((d) => list.push({ ...(d.data() as CheckInItem), id: d.id }));
+        callback(list.reverse());
+      }
+    },
+    (err) => console.warn(err)
+  );
+
+  const unsubRtdb = onValue(
+    ref(rtdb, "checkIns"),
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        const list: CheckInItem[] = Array.isArray(val)
+          ? val.filter(Boolean)
+          : Object.keys(val).map((k) => ({ ...val[k], id: k }));
+        callback(list.reverse());
+      } else {
+        callback([]);
+      }
+    },
+    (err) => console.warn(err)
+  );
+
+  return () => {
+    unsubFirestore();
+    unsubRtdb();
+  };
+}
+
+export async function markGuestCheckInFirebase(guestName: string, isManualLink = false) {
+  const slug = encodeURIComponent(guestName.toLowerCase().replace(/\s+/g, "-"));
+  const id = `checkin-${slug}`;
+  const checkInItem: CheckInItem = {
+    id,
+    guestName,
+    slug,
+    timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+    isManualLink,
+  };
+
+  try { await setDoc(doc(firestore, "checkIns", id), checkInItem); } catch (e) {}
+  try { await set(ref(rtdb, `checkIns/${id}`), checkInItem); } catch (e) {}
+  return checkInItem;
+}
+
+export async function deleteCheckInFromFirebase(id: string) {
+  try { await deleteDoc(doc(firestore, "checkIns", id)); } catch (e) {}
+  try { await set(ref(rtdb, `checkIns/${id}`), null); } catch (e) {}
 }

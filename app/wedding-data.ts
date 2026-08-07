@@ -33,6 +33,14 @@ export type WishItem = {
   timestamp: string;
 };
 
+export type CheckInItem = {
+  id: string;
+  guestName: string;
+  slug: string;
+  timestamp: string;
+  isManualLink?: boolean;
+};
+
 export type WeddingData = {
   bride: string;
   brideParents: string;

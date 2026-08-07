@@ -3,8 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { defaultWedding, defaultWishes, type RSVPItem, type WeddingData, type WishItem } from "./wedding-data";
-import { subscribeWeddingData, subscribeWishes, addWishToFirebase, addRSVPToFirebase } from "./firebase";
+import { defaultWedding, defaultWishes, type RSVPItem, type WeddingData, type WishItem, type CheckInItem } from "./wedding-data";
+import { subscribeWeddingData, subscribeWishes, subscribeCheckIns, addWishToFirebase, addRSVPToFirebase } from "./firebase";
 
 export const STORAGE_KEY = "ruang-temu-wedding-data";
 export const RSVP_STORAGE_KEY = "ruang-temu-rsvp-list";
@@ -30,6 +30,21 @@ function getGoogleCalendarUrl(title: string, details: string, location: string, 
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     title
   )}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}&dates=${start}/${end}`;
+}
+
+// Vector Botanical Divider Ornament
+function BotanicalDivider() {
+  return (
+    <div className="vector-divider animated-float">
+      <svg viewBox="0 0 140 24">
+        <path d="M10 12c15-8 35-8 60 0-25 8-45 8-60 0z" opacity="0.3" />
+        <path d="M130 12c-15-8-35-8-60 0 25 8 45 8 60 0z" opacity="0.3" />
+        <circle cx="70" cy="12" r="5" fill="#c5a059" />
+        <circle cx="54" cy="12" r="3" fill="#7e9b8c" />
+        <circle cx="86" cy="12" r="3" fill="#7e9b8c" />
+      </svg>
+    </div>
+  );
 }
 
 // Generate simple SVG QR Code pattern
@@ -60,6 +75,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const [opened, setOpened] = useState(false);
   const [data, setData] = useState<WeddingData>(defaultWedding);
   const [wishes, setWishes] = useState<WishItem[]>(defaultWishes);
+  const [checkIns, setCheckIns] = useState<CheckInItem[]>([]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Audio / Music Player State
@@ -88,6 +104,17 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const guest = useMemo(() => getGuest(slug || "tamu-undangan"), [slug]);
+  const currentSlug = useMemo(() => (slug || "").toLowerCase().replace(/[-_+]/g, "-"), [slug]);
+
+  // Check if this guest is checked-in by Palawari
+  const isCheckedIn = useMemo(() => {
+    return checkIns.some((c) => {
+      const cSlug = (c.slug || "").toLowerCase();
+      const cName = (c.guestName || "").toLowerCase();
+      const targetName = guest.toLowerCase();
+      return cSlug === currentSlug || cName === targetName;
+    });
+  }, [checkIns, currentSlug, guest]);
 
   // Robust safe getters
   const brideName = data?.bride || defaultWedding.bride;
@@ -107,7 +134,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     }
   }, [brideName, groomName]);
 
-  // 1. Subscribe to Firebase Realtime Database for global cross-device sync
+  // Subscribe to Firebase Realtime Sync
   useEffect(() => {
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
@@ -122,9 +149,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
         });
       }
-    } catch (e) {
-      console.warn("LocalStorage load error", e);
-    }
+    } catch (e) {}
 
     const unsubscribeWedding = subscribeWeddingData((fbData) => {
       if (fbData) {
@@ -136,20 +161,25 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           gallery: fbData.gallery || defaultWedding.gallery,
           giftAddress: fbData.giftAddress || defaultWedding.giftAddress,
         });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(fbData));
       }
     });
 
     const unsubscribeWishes = subscribeWishes((fbWishes) => {
       if (fbWishes && fbWishes.length > 0) {
         setWishes(fbWishes);
-        localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(fbWishes));
+      }
+    });
+
+    const unsubscribeCheckIns = subscribeCheckIns((fbCheckIns) => {
+      if (fbCheckIns) {
+        setCheckIns(fbCheckIns);
       }
     });
 
     return () => {
       unsubscribeWedding();
       unsubscribeWishes();
+      unsubscribeCheckIns();
     };
   }, []);
 
@@ -185,7 +215,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       audioRef.current
         .play()
         .then(() => setIsPlaying(true))
-        .catch((err) => console.warn("Audio play blocked by browser", err));
+        .catch((err) => console.warn("Audio play blocked", err));
     }
   };
 
@@ -199,7 +229,6 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     }
   };
 
-  // Autoplay trigger on first touch/click/scroll anywhere on page
   useEffect(() => {
     if (!opened || isPlaying) return;
     const handleFirstUserInteraction = () => {
@@ -234,7 +263,6 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     }
   };
 
-  // Submit RSVP to Firebase
   const handleRSVPSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newRSVP: RSVPItem = {
@@ -251,7 +279,6 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     showToast("Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.");
   };
 
-  // Submit Wish to Firebase
   const handleWishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wishForm.name || !wishForm.message) return;
@@ -278,7 +305,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           backgroundImage: `linear-gradient(180deg, rgba(16,28,24,.3), rgba(16,28,24,.78)), url('${data?.heroImage || defaultWedding.heroImage}')`,
         }}
       >
-        <div className="cover-inner">
+        <div className="cover-inner animated-fade-in">
           <p>THE WEDDING OF</p>
           <h1>
             {brideName} <i>&</i> {groomName}
@@ -298,7 +325,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
   return (
     <main className="invitation">
-      {/* Background Audio with Autoplay */}
+      {/* Background Audio */}
       {data?.musicUrl && <audio ref={audioRef} src={data.musicUrl} autoPlay loop />}
 
       {/* Floating Music Player Widget */}
@@ -337,7 +364,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           backgroundImage: `linear-gradient(180deg, rgba(12,25,20,.15), rgba(12,25,20,.65)), url('${data?.heroImage || defaultWedding.heroImage}')`,
         }}
       >
-        <div>
+        <div className="animated-fade-in">
           <p>WE ARE GETTING MARRIED</p>
           <h1>
             {brideName} <i>&</i> {groomName}
@@ -359,6 +386,8 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           kami bermaksud menyelenggarakan pernikahan kami.
         </p>
 
+        <BotanicalDivider />
+
         <div className="couple-parents-grid">
           <div className="couple-card">
             <h3>{brideName}</h3>
@@ -372,7 +401,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </div>
       </section>
 
-      {/* Gallery Section (Moved right after Mempelai for standard elegant flow) */}
+      {/* Gallery Section (Positioned Elegantly after Mempelai) */}
       <section className="gallery-section" id="galeri">
         <div className="section-head">
           <div>
@@ -445,6 +474,8 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       <section className="event-section" id="acara">
         <p className="eyebrow">RANGKAIAN ACARA</p>
         <h2>{data?.dateLong || defaultWedding.dateLong}</h2>
+
+        <BotanicalDivider />
 
         <div className="event-grid">
           {eventsList.map((ev, i) => (
@@ -652,7 +683,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </div>
       </section>
 
-      {/* QR Code Check-in Ticket */}
+      {/* QR Code Check-in Ticket with Realtime Palawari Status */}
       <section className="ticket-section">
         <p className="eyebrow" style={{ color: "#b3c4bc" }}>PRESENSI DIGITIAL</p>
         <h2 className="section-title" style={{ color: "white" }}>E-Ticket &amp; Scan QR</h2>
@@ -666,6 +697,17 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           <div className="ticket-footer">
             Tamu: <strong>{guest}</strong>
           </div>
+
+          {/* REALTIME PALAWARI CHECK-IN STATUS BADGE */}
+          {isCheckedIn ? (
+            <div className="checkin-status-badge checked-in">
+              <span>✓ SUDAH HADIR / CHECKED IN</span>
+            </div>
+          ) : (
+            <div className="checkin-status-badge pending">
+              <span>? TAMPILKAN KODE QR PADA PALAWARI saat TIBA</span>
+            </div>
+          )}
         </div>
       </section>
 

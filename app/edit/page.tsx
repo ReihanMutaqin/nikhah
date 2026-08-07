@@ -3,75 +3,80 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { defaultWedding, defaultWishes, type BankAccount, type RSVPItem, type WeddingData, type WishItem } from "../wedding-data";
-import { RSVP_STORAGE_KEY, STORAGE_KEY, WISHES_STORAGE_KEY } from "../WeddingInvitation";
+import { defaultWedding, type BankAccount, type EventItem, type RSVPItem, type WeddingData, type WishItem, type CheckInItem } from "../wedding-data";
 import {
   subscribeWeddingData,
-  subscribeRSVPs,
-  subscribeWishes,
   saveWeddingDataToFirebase,
-  deleteRSVPFromFirebase,
+  subscribeWishes,
   deleteWishFromFirebase,
+  subscribeRSVPs,
+  deleteRSVPFromFirebase,
+  subscribeCheckIns,
+  markGuestCheckInFirebase,
+  deleteCheckInFromFirebase,
 } from "../firebase";
+import { STORAGE_KEY } from "../WeddingInvitation";
 
-type BulkGuest = {
-  id: string;
-  name: string;
-  slug: string;
-  url: string;
-  waText: string;
-  waUrl: string;
-};
-
-export default function EditorPage() {
+export default function EditPage() {
   const [data, setData] = useState<WeddingData>(defaultWedding);
   const [rsvps, setRsvps] = useState<RSVPItem[]>([]);
-  const [wishes, setWishes] = useState<WishItem[]>(defaultWishes);
-  const [saved, setSaved] = useState(false);
-  const [savingLoading, setSavingLoading] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [wishes, setWishes] = useState<WishItem[]>([]);
+  const [checkIns, setCheckIns] = useState<CheckInItem[]>([]);
 
-  // Security / PIN Auth State
+  // Security Auth PIN state
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [inputPin, setInputPin] = useState("");
   const [pinError, setPinError] = useState(false);
 
-  // Bulk Invitation Generator State
-  const [bulkInput, setBulkInput] = useState(
-    "Bapak Ahmad & Keluarga\nIbu Siti & Suami\nDimas & Partner\nSahabat Alumnus SMA 1\nRian Hidayat"
+  const [savingLoading, setSavingLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Bulk Links & Palawari State
+  const [baseUrl, setBaseUrl] = useState("https://nikhahan.vercel.app");
+  const [rawGuestNames, setRawGuestNames] = useState(
+    "Bapak Ahmad & Keluarga\nIbu Siti & Suami\nDimas & Partner\nSahabat Alumnus SMA 1\nRian Hidayat\nEnjel & Suami"
   );
-  const [domainUrl, setDomainUrl] = useState("https://nikhah.vercel.app");
   const [waTemplate, setWaTemplate] = useState(
-    "Kepada Yth. {nama}\n\nTanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:\n\n{mempelai}\n\nBerikut tautan undangan personal Anda:\n{link}\n\nMerupakan suatu kehormatan & kebahagiaan bagi kami apabila Anda berkenan hadir dan memberikan doa restu.\n\nTerima kasih."
+    "Kepada Yth. {nama}\n\nTanpa mengurangi rasa hormat, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:\n{mempelai}\n\nDetail lengkap acara & konfirmasi kehadiran dapat dilihat melalui link undangan berikut:\n{link}\n\nMerupakan suatu kehormatan bagi kami apabila Anda berkenan hadir dan memberikan doa restu.\n\nTerima kasih."
   );
-  const [generatedGuests, setGeneratedGuests] = useState<BulkGuest[]>([]);
+  const [generatedGuests, setGeneratedGuests] = useState<{ name: string; slug: string; url: string; waMessage: string }[]>([]);
+
+  // Palawari Check-In Search / Direct input
+  const [palawariSearch, setPalawariSearch] = useState("");
+  const [directGuestName, setDirectGuestName] = useState("");
+
+  const brideName = data?.bride || defaultWedding.bride;
+  const groomName = data?.groom || defaultWedding.groom;
+  const couple = `${brideName} & ${groomName}`;
+  const brideInitial = brideName ? brideName[0] : "A";
+  const groomInitial = groomName ? groomName[0] : "B";
+  const initials = `${brideInitial}${groomInitial}`;
 
   useEffect(() => {
-    // Detect origin
-    if (typeof window !== "undefined") {
-      setDomainUrl(window.location.origin);
+    if (typeof document !== "undefined") {
+      document.title = `Edit Undangan — ${couple}`;
     }
+  }, [couple]);
 
-    // LocalStorage fallback cache
+  // Check auth session
+  useEffect(() => {
+    const authSession = sessionStorage.getItem("ruang-temu-auth");
+    if (authSession === "true") {
+      setIsAuthorized(true);
+    }
+  }, []);
+
+  // 1. Subscribe to Firebase Realtime Sync
+  useEffect(() => {
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
-        const parsed = JSON.parse(savedData);
-        setData({
-          ...defaultWedding,
-          ...parsed,
-          events: parsed.events || defaultWedding.events,
-          bankAccounts: parsed.bankAccounts || defaultWedding.bankAccounts,
-          gallery: parsed.gallery || defaultWedding.gallery,
-          giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
-        });
+        setData({ ...defaultWedding, ...JSON.parse(savedData) });
       }
-    } catch (e) {
-      console.warn(e);
-    }
+    } catch (e) {}
 
-    // Realtime Firebase Subscriptions
-    const unsubWedding = subscribeWeddingData((fbData) => {
+    const unsubscribeWedding = subscribeWeddingData((fbData) => {
       if (fbData) {
         setData({
           ...defaultWedding,
@@ -84,29 +89,48 @@ export default function EditorPage() {
       }
     });
 
-    const unsubRSVPs = subscribeRSVPs((fbRsvps) => {
-      if (fbRsvps) setRsvps(fbRsvps);
-    });
-
-    const unsubWishes = subscribeWishes((fbWishes) => {
+    const unsubscribeWishes = subscribeWishes((fbWishes) => {
       if (fbWishes) setWishes(fbWishes);
     });
 
-    const auth = sessionStorage.getItem("ruang-temu-auth");
-    if (auth === "true") {
-      setIsAuthorized(true);
-    }
+    const unsubscribeRSVPs = subscribeRSVPs((fbRSVPs) => {
+      if (fbRSVPs) setRsvps(fbRSVPs);
+    });
+
+    const unsubscribeCheckIns = subscribeCheckIns((fbCheckIns) => {
+      if (fbCheckIns) setCheckIns(fbCheckIns);
+    });
 
     return () => {
-      unsubWedding();
-      unsubRSVPs();
-      unsubWishes();
+      unsubscribeWedding();
+      unsubscribeWishes();
+      unsubscribeRSVPs();
+      unsubscribeCheckIns();
     };
   }, []);
 
+  // Generate Bulk Guest Links
+  useEffect(() => {
+    const lines = rawGuestNames
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const list = lines.map((name) => {
+      const slug = encodeURIComponent(name.toLowerCase().replace(/\s+/g, "-"));
+      const url = `${baseUrl.replace(/\/$/, "")}/${slug}`;
+      const msg = waTemplate
+        .replace(/{nama}/g, name)
+        .replace(/{mempelai}/g, couple)
+        .replace(/{link}/g, url);
+      return { name, slug, url, waMessage: msg };
+    });
+    setGeneratedGuests(list);
+  }, [rawGuestNames, baseUrl, waTemplate, couple]);
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
+    setTimeout(() => setToastMsg(null), 3500);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -132,7 +156,6 @@ export default function EditorPage() {
 
   const save = async () => {
     setSavingLoading(true);
-    // Save to Firebase Realtime Database & Firestore
     const res = await saveWeddingDataToFirebase(data);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setSavingLoading(false);
@@ -174,82 +197,32 @@ export default function EditorPage() {
   };
 
   const exportData = () => {
-    const fullData = { wedding: data, rsvps, wishes, bulkGuests: generatedGuests };
+    const fullData = { wedding: data, rsvps, wishes, checkIns, bulkGuests: generatedGuests };
     const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "ruang-temu-wedding-export.json";
+    a.href = url;
+    a.download = `wedding-data-backup-${Date.now()}.json`;
     a.click();
-    URL.revokeObjectURL(a.href);
+    showToast("Data backup JSON berhasil diunduh!");
   };
 
-  // Generate Bulk Links & Messages
-  const handleGenerateBulk = () => {
-    const lines = bulkInput
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
-
-    const coupleName = `${data.bride} & ${data.groom}`;
-
-    const list: BulkGuest[] = lines.map((name, idx) => {
-      const slug = encodeURIComponent(name.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "dan"));
-      const link = `${domainUrl}/${slug}`;
-      const waText = waTemplate
-        .replace(/{nama}/g, name)
-        .replace(/{mempelai}/g, coupleName)
-        .replace(/{link}/g, link);
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
-
-      return {
-        id: `guest-${idx}-${Date.now()}`,
-        name,
-        slug,
-        url: link,
-        waText,
-        waUrl,
-      };
-    });
-
-    setGeneratedGuests(list);
-    showToast(`Berhasil me-generate ${list.length} link undangan masal!`);
-  };
-
-  const copyAllLinks = () => {
-    if (generatedGuests.length === 0) return;
-    const text = generatedGuests.map((g) => `${g.name}: ${g.url}`).join("\n");
-    if (navigator?.clipboard) navigator.clipboard.writeText(text);
-    showToast("Semua tautan berhasil disalin ke clipboard!");
-  };
-
-  const copySingleText = (text: string, label: string) => {
-    if (navigator?.clipboard) navigator.clipboard.writeText(text);
-    showToast(`${label} disalin!`);
-  };
-
-  const exportBulkCsv = () => {
-    if (generatedGuests.length === 0) return;
-    let csv = "Nama Tamu,Tautan Personal,Link WhatsApp\n";
-    generatedGuests.forEach((g) => {
-      csv += `"${g.name.replace(/"/g, '""')}","${g.url}","${g.waUrl}"\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `daftar-undangan-masal-${data.bride}-${data.groom}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+  // Helper functions for events & bank
+  const updateEvent = (index: number, field: keyof EventItem, val: string) => {
+    const newEvents = [...data.events];
+    newEvents[index] = { ...newEvents[index], [field]: val };
+    patch("events", newEvents);
   };
 
   const addBankAccount = () => {
-    const newAcc: BankAccount = {
+    const newBank: BankAccount = {
       id: "bank-" + Date.now(),
       bank: "BCA",
       accountNumber: "1234567890",
-      accountHolder: data.bride,
-      logoText: "BCA",
+      accountHolder: brideName || "Nama Pemilik",
+      logoText: "BANK",
     };
-    patch("bankAccounts", [...data.bankAccounts, newAcc]);
+    patch("bankAccounts", [...data.bankAccounts, newBank]);
   };
 
   const updateBankAccount = (id: string, field: keyof BankAccount, val: string) => {
@@ -268,26 +241,34 @@ export default function EditorPage() {
 
   const handleDeleteWish = async (id: string) => {
     await deleteWishFromFirebase(id);
-    showToast("Ucapan berhasil dihapus dari Firebase.");
+    showToast("Ucapan berhasil dihapus.");
   };
 
   const handleDeleteRSVP = async (id: string) => {
     await deleteRSVPFromFirebase(id);
-    showToast("RSVP berhasil dihapus dari Firebase.");
+    showToast("RSVP berhasil dihapus.");
   };
 
-  const brideName = data?.bride || defaultWedding.bride;
-  const groomName = data?.groom || defaultWedding.groom;
-  const couple = `${brideName} & ${groomName}`;
-  const brideInitial = brideName ? brideName[0] : "A";
-  const groomInitial = groomName ? groomName[0] : "B";
-  const initials = `${brideInitial}${groomInitial}`;
+  // Palawari Check-In Handlers
+  const handleToggleCheckIn = async (guestName: string, isManual = false) => {
+    const slug = encodeURIComponent(guestName.toLowerCase().replace(/\s+/g, "-"));
+    const existing = checkIns.find((c) => (c.slug || "").toLowerCase() === slug.toLowerCase() || c.guestName.toLowerCase() === guestName.toLowerCase());
 
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.title = `Edit Undangan — ${couple}`;
+    if (existing) {
+      await deleteCheckInFromFirebase(existing.id);
+      showToast(`Batal Check-In: ${guestName}`);
+    } else {
+      await markGuestCheckInFirebase(guestName, isManual);
+      showToast(`✓ CHECK-IN BERHASIL: ${guestName} (SUDAH HADIR)`);
     }
-  }, [couple]);
+  };
+
+  const handleDirectCheckInSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directGuestName.trim()) return;
+    handleToggleCheckIn(directGuestName.trim(), true);
+    setDirectGuestName("");
+  };
 
   const totalAttending = rsvps
     .filter((r) => r.attendance === "hadir")
@@ -329,29 +310,27 @@ export default function EditorPage() {
               display: "grid",
               placeItems: "center",
               margin: "0 auto 20px",
-              fontSize: "1.6rem",
+              fontSize: "1.4rem",
+              fontWeight: "bold",
             }}
           >
             🔒
           </div>
-          <p className="eyebrow" style={{ color: "var(--gold-light)" }}>
-            RUANG TEMU ADMIN
-          </p>
-          <h2 style={{ font: "500 2rem 'Playfair Display', serif", margin: "10px 0 6px" }}>Akses Terkunci</h2>
-          <p style={{ fontSize: "0.85rem", color: "#b7c7c0", margin: "0 0 25px", lineHeight: "1.6" }}>
-            Masukkan PIN Keamanan untuk mengakses ruang edit &amp; generator undangan.
+          <h2 style={{ font: "500 2rem 'Playfair Display', serif", margin: "0 0 10px" }}>Pengamanan Admin</h2>
+          <p style={{ fontSize: "0.86rem", color: "#b2c7bd", margin: "0 0 25px", lineHeight: "1.6" }}>
+            Masukkan PIN Keamanan untuk membuka halaman edit isi undangan &amp; fitur Palawari.
           </p>
 
-          <form onSubmit={handleLogin} style={{ display: "grid", gap: "16px" }}>
+          <form onSubmit={handleLogin} style={{ display: "grid", gap: "15px" }}>
             <input
               type="password"
-              placeholder="Masukkan PIN Admin (Default: 1234)"
+              placeholder="Masukkan PIN (Default: 1234)"
               value={inputPin}
               onChange={(e) => setInputPin(e.target.value)}
               style={{
                 padding: "14px 18px",
                 borderRadius: "12px",
-                border: pinError ? "1px solid #ff7b7b" : "1px solid rgba(255,255,255,0.3)",
+                border: "1px solid rgba(255,255,255,0.3)",
                 background: "rgba(255,255,255,0.15)",
                 color: "white",
                 textAlign: "center",
@@ -359,11 +338,11 @@ export default function EditorPage() {
                 letterSpacing: "0.2em",
                 outline: "none",
               }}
-              required
+              autoFocus
             />
 
             {pinError && (
-              <p style={{ color: "#ff8b8b", fontSize: "0.78rem", margin: 0 }}>
+              <p style={{ color: "#f87171", fontSize: "0.8rem", margin: 0, fontWeight: "600" }}>
                 ❌ PIN salah! Silakan periksa kembali.
               </p>
             )}
@@ -373,7 +352,7 @@ export default function EditorPage() {
             </button>
           </form>
 
-          <Link href="/reihan&pasangan" style={{ display: "block", marginTop: "22px", fontSize: "0.78rem", color: "#a8bdb3", textDecoration: "underline" }}>
+          <Link href="/" style={{ display: "block", marginTop: "22px", fontSize: "0.78rem", color: "#a8bdb3", textDecoration: "underline" }}>
             ← Kembali ke Undangan
           </Link>
         </div>
@@ -393,56 +372,168 @@ export default function EditorPage() {
         <div>
           <p style={{ color: "#77ffbb", fontWeight: "bold" }}>🔥 FIREBASE REALTIME DB CONNECTED</p>
           <h1>Manajer Undangan</h1>
-          <span>Semua edit otomatis tersinkronisasi ke seluruh HP &amp; perangkat tamu secara live.</span>
+          <span>Semua edit &amp; presensi Palawari tersinkronisasi ke seluruh HP &amp; perangkat secara live.</span>
         </div>
         <nav>
-          <a href="#masal">⚡ Generator Undangan Masal</a>
-          <a href="#utama">1. Informasi Mempelai</a>
+          <a href="#palawari" style={{ color: "#77ffbb", fontWeight: "bold" }}>🎯 09. Presensi Palawari (Scan)</a>
+          <a href="#bulk">⚡ Generator Undangan Masal</a>
+          <a href="#informasi">1. Informasi Mempelai</a>
           <a href="#keamanan">2. Keamanan PIN Admin</a>
           <a href="#acara-edit">3. Detail Acara</a>
-          <a href="#amplop-edit">4. Rekening &amp; Kado</a>
-          <a href="#musik-edit">5. Musik &amp; Media</a>
+          <a href="#rekening">4. Rekening &amp; Kado</a>
+          <a href="#musik-edit">5. Musik &amp; Autoplay</a>
           <a href="#foto">6. Galeri Foto</a>
-          <a href="#rsvp-admin">7. Data RSVP ({rsvps.length})</a>
-          <a href="#wishes-admin">8. Buku Tamu ({wishes.length})</a>
+          <a href="#rsvp-data">7. Data RSVP ({rsvps.length})</a>
+          <a href="#wishes-data">8. Buku Tamu ({wishes.length})</a>
         </nav>
-
         <button
           onClick={handleLogout}
-          style={{
-            marginTop: "auto",
-            border: "1px solid rgba(255,255,255,0.25)",
-            padding: "11px",
-            color: "#ffaaaa",
-            fontSize: "0.8rem",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}
+          className="preview-link"
+          style={{ cursor: "pointer", background: "rgba(255, 99, 99, 0.2)", border: "1px solid rgba(255, 99, 99, 0.4)", color: "#ffaaaa" }}
         >
           🔒 Kunci Ruang Edit (Logout)
         </button>
       </aside>
 
-      <section className="editor-main">
+      <div className="editor-main">
         <div className="editor-top">
           <div>
-            <p className="eyebrow">WEDDING CONTENT MANAGER • REALTIME FIREBASE SYNC</p>
+            <span className="eyebrow">WEDDING CONTENT MANAGER + REALTIME FIREBASE SYNC</span>
             <h2>Pengaturan Undangan Cloud Protected</h2>
           </div>
           <div className="editor-actions">
-            <button onClick={exportData}>💾 Ekspor Data JSON</button>
-            <button className="save-button" onClick={save} disabled={savingLoading}>
-              {savingLoading ? "Menyimpan ke Cloud..." : saved ? "Tersimpan di Cloud 🔥" : "🔥 Simpan Perubahan ke Firebase"}
+            <button onClick={exportData} style={{ cursor: "pointer" }}>
+              💾 Ekspor Data JSON
+            </button>
+            <button className="save-button" onClick={save} disabled={savingLoading} style={{ cursor: "pointer" }}>
+              {savingLoading ? "Menyimpan..." : saved ? "✓ Tersimpan!" : "🔥 Simpan Perubahan ke Firebase"}
             </button>
           </div>
         </div>
 
-        {/* BULK INVITATION LINK & WA GENERATOR */}
-        <div className="form-card" id="masal" style={{ border: "2px solid var(--gold)" }}>
+        {/* 09. PRESENSI PALAWARI (SCANNER / CHECK-IN RECEPTIONSIST MODE) */}
+        <div className="form-card" id="palawari" style={{ border: "2px solid var(--forest)", background: "#f8fdfa" }}>
           <div className="form-title">
-            <span style={{ fontSize: "1.5rem" }}>⚡</span>
+            <span style={{ color: "var(--forest)", fontSize: "1.6rem" }}>🎯</span>
             <div>
-              <h3 style={{ color: "var(--forest)" }}>Generator Undangan Masal (Bulk Links &amp; WhatsApp)</h3>
+              <h3 style={{ color: "var(--forest)" }}>09. Scanner Presensi Tamu &amp; Mode Palawari (Receptionist)</h3>
+              <p>Penerima tamu di venue dapat men-scan QR code atau mencari nama tamu untuk memberi <b>Centang Hijau (✓ SUDAH HADIR)</b> secara realtime.</p>
+            </div>
+          </div>
+
+          <div style={{ background: "var(--forest)", color: "white", padding: "20px 24px", borderRadius: "16px", marginBottom: "25px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "15px" }}>
+            <div>
+              <span style={{ fontSize: "0.75rem", opacity: 0.8, letterSpacing: "0.1em" }}>TOTAL PRESENSI HADIR LOKASI</span>
+              <h2 style={{ font: "500 2.4rem 'Playfair Display', serif", margin: "4px 0 0", color: "var(--gold-light)" }}>
+                {checkIns.length} <small style={{ fontSize: "1rem", color: "#a8bdb3" }}>/ {generatedGuests.length} Tamu</small>
+              </h2>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <span className="badge-attendance hadir" style={{ fontSize: "0.85rem", padding: "6px 16px" }}>
+                ✓ {checkIns.length} Tamu Ter-scan Di Venue
+              </span>
+            </div>
+          </div>
+
+          {/* Direct Input for unregistered / manual link guests */}
+          <form onSubmit={handleDirectCheckInSubmit} style={{ display: "flex", gap: "10px", marginBottom: "25px" }}>
+            <input
+              type="text"
+              placeholder="Masukkan nama tamu baru (manual link e.g. Enjel)..."
+              value={directGuestName}
+              onChange={(e) => setDirectGuestName(e.target.value)}
+              style={{ flex: 1, padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--line)", background: "white" }}
+            />
+            <button type="submit" className="button primary" style={{ borderRadius: "10px", padding: "12px 20px" }}>
+              ＋ Check-In Tamu Baru
+            </button>
+          </form>
+
+          {/* Quick Search */}
+          <div style={{ marginBottom: "15px" }}>
+            <input
+              type="text"
+              placeholder="🔍 Cari nama tamu (Contoh: Enjel, Ahmad, Dimas)..."
+              value={palawariSearch}
+              onChange={(e) => setPalawariSearch(e.target.value)}
+              style={{ width: "100%", padding: "14px 18px", borderRadius: "12px", border: "1px solid var(--sage)", background: "white", fontSize: "1rem" }}
+            />
+          </div>
+
+          {/* Palawari Guest Checklist Table */}
+          <div style={{ maxHeight: "420px", overflowY: "auto", border: "1px solid var(--line)", borderRadius: "12px", background: "white" }}>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Nama Tamu Undangan</th>
+                  <th>Status Presensi Venue</th>
+                  <th>Waktu Scan</th>
+                  <th>Aksi Palawari</th>
+                </tr>
+              </thead>
+              <tbody>
+                {generatedGuests
+                  .filter((g) => g.name.toLowerCase().includes(palawariSearch.toLowerCase()))
+                  .map((g, idx) => {
+                    const isChecked = checkIns.some(
+                      (c) => (c.slug || "").toLowerCase() === g.slug.toLowerCase() || c.guestName.toLowerCase() === g.name.toLowerCase()
+                    );
+                    const checkObj = checkIns.find(
+                      (c) => (c.slug || "").toLowerCase() === g.slug.toLowerCase() || c.guestName.toLowerCase() === g.name.toLowerCase()
+                    );
+
+                    return (
+                      <tr key={g.slug + idx} style={{ background: isChecked ? "#f0fdf4" : "white" }}>
+                        <td>{idx + 1}</td>
+                        <td>
+                          <strong>{g.name}</strong>
+                          <br />
+                          <small style={{ color: "#7a8a81" }}>{g.url}</small>
+                        </td>
+                        <td>
+                          {isChecked ? (
+                            <span className="badge-attendance hadir" style={{ background: "#d1fae5", color: "#065f46", fontSize: "0.8rem", fontWeight: "700" }}>
+                              ✓ SUDAH HADIR / CHECKED IN
+                            </span>
+                          ) : (
+                            <span className="badge-attendance ragu" style={{ fontSize: "0.75rem" }}>
+                              ? Belum Tiba
+                            </span>
+                          )}
+                        </td>
+                        <td>{checkObj?.timestamp || "—"}</td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCheckIn(g.name)}
+                            style={{
+                              padding: "8px 16px",
+                              borderRadius: "8px",
+                              fontWeight: "600",
+                              fontSize: "0.78rem",
+                              background: isChecked ? "#fee2e2" : "var(--forest)",
+                              color: isChecked ? "#991b1b" : "white",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {isChecked ? "✕ Batal Check-In" : "✓ CENTANG HADIR"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* BULK GUEST LINK GENERATOR */}
+        <div className="form-card" id="bulk" style={{ border: "2px solid var(--gold)" }}>
+          <div className="form-title">
+            <span style={{ color: "var(--gold)" }}>⚡</span>
+            <div>
+              <h3>Generator Undangan Masal (Bulk Links &amp; WhatsApp)</h3>
               <p>Masukkan puluhan/ratusan nama tamu sekaligus (satu nama per baris). Sistem akan otomatis membuat link personal &amp; draf pesan WhatsApp siap kirim!</p>
             </div>
           </div>
@@ -450,157 +541,104 @@ export default function EditorPage() {
           <div className="form-grid">
             <label className="wide">
               Domain Utama Web Undangan
-              <input value={domainUrl} onChange={(e) => setDomainUrl(e.target.value)} placeholder="https://nikhah.vercel.app" />
+              <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://nikhahan.vercel.app" />
             </label>
 
             <label className="wide">
               Daftar Nama Tamu (Satu Nama Per Baris)
               <textarea
                 rows={6}
-                value={bulkInput}
-                onChange={(e) => setBulkInput(e.target.value)}
-                placeholder="Contoh:&#10;Bapak Ahmad &amp; Keluarga&#10;Ibu Siti&#10;Dimas &amp; Partner"
+                value={rawGuestNames}
+                onChange={(e) => setRawGuestNames(e.target.value)}
+                placeholder="Bapak Ahmad &amp; Keluarga&#10;Ibu Siti&#10;Dimas &amp; Partner"
               />
             </label>
 
             <label className="wide">
               Template Pesan WhatsApp (Gunakan placeholder: &#123;nama&#125;, &#123;mempelai&#125;, &#123;link&#125;)
-              <textarea rows={5} value={waTemplate} onChange={(e) => setWaTemplate(e.target.value)} />
+              <textarea rows={4} value={waTemplate} onChange={(e) => setWaTemplate(e.target.value)} />
             </label>
           </div>
 
-          <button
-            type="button"
-            className="button primary"
-            onClick={handleGenerateBulk}
-            style={{ width: "100%", marginTop: "20px", padding: "16px" }}
-          >
-            ⚡ Generate Semua Link &amp; Pesan WA Sekaligus
-          </button>
+          {/* Table Result of Generated Links */}
+          <div style={{ marginTop: "25px", overflowX: "auto" }}>
+            <h4 style={{ margin: "0 0 12px", font: "500 1.1rem 'Playfair Display', serif" }}>
+              📋 Hasil Draf Undangan ({generatedGuests.length} Link Tamu Tergenerate)
+            </h4>
 
-          {generatedGuests.length > 0 && (
-            <div style={{ marginTop: "30px", borderTop: "1px dashed var(--line)", paddingTop: "25px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "10px" }}>
-                <div>
-                  <h4 style={{ margin: 0, font: "500 1.3rem 'Playfair Display', serif" }}>
-                    Hasil Generator ({generatedGuests.length} Tamu)
-                  </h4>
-                  <span style={{ fontSize: "0.78rem", color: "#6a7b72" }}>Tautan siap dikirim langsung via WhatsApp atau disalin.</span>
-                </div>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button type="button" onClick={copyAllLinks} className="button secondary" style={{ fontSize: "0.78rem", padding: "10px 16px" }}>
-                    📋 Salin Semua Link
-                  </button>
-                  <button type="button" onClick={exportBulkCsv} className="button secondary" style={{ fontSize: "0.78rem", padding: "10px 16px" }}>
-                    📊 Ekspor CSV / Excel
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gap: "14px", maxHeight: "500px", overflowY: "auto", paddingRight: "4px" }}>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Nama Tamu</th>
+                  <th>Link Khusus Undangan</th>
+                  <th>Kirim WhatsApp</th>
+                </tr>
+              </thead>
+              <tbody>
                 {generatedGuests.map((g, idx) => (
-                  <div
-                    key={g.id}
-                    style={{
-                      background: "#fafcfb",
-                      border: "1px solid var(--line)",
-                      borderRadius: "12px",
-                      padding: "16px 20px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "15px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: "220px" }}>
-                      <span style={{ fontSize: "0.7rem", color: "var(--gold-dark)", fontWeight: "600" }}>#{idx + 1}</span>
-                      <h5 style={{ margin: "2px 0 4px", fontSize: "1.05rem", color: "var(--forest)" }}>{g.name}</h5>
-                      <a href={g.url} target="_blank" rel="noreferrer" style={{ fontSize: "0.8rem", color: "#547365", textDecoration: "underline", wordBreak: "break-all" }}>
+                  <tr key={g.slug + idx}>
+                    <td>{idx + 1}</td>
+                    <td><strong>{g.name}</strong></td>
+                    <td>
+                      <a href={g.url} target="_blank" rel="noreferrer" style={{ textDecoration: "underline", color: "var(--forest)" }}>
                         {g.url}
                       </a>
-                    </div>
-
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        onClick={() => copySingleText(g.url, "Link undangan")}
-                        style={{ padding: "9px 14px", background: "white", border: "1px solid #c4d4cc", borderRadius: "8px", fontSize: "0.76rem", fontWeight: "600" }}
-                      >
-                        📋 Salin Link
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => copySingleText(g.waText, "Pesan WA")}
-                        style={{ padding: "9px 14px", background: "white", border: "1px solid #c4d4cc", borderRadius: "8px", fontSize: "0.76rem", fontWeight: "600" }}
-                      >
-                        💬 Salin Pesan WA
-                      </button>
+                    </td>
+                    <td>
                       <a
-                        href={g.waUrl}
+                        className="action-btn"
+                        style={{ background: "#25D366", color: "white", borderColor: "#25D366" }}
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(g.waMessage)}`}
                         target="_blank"
                         rel="noreferrer"
-                        style={{
-                          padding: "9px 16px",
-                          background: "#25D366",
-                          color: "white",
-                          borderRadius: "8px",
-                          fontSize: "0.76rem",
-                          fontWeight: "600",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                        }}
                       >
-                        📲 Kirim WA ↗
+                        💬 Kirim WA
                       </a>
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            </div>
-          )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* 1. Informasi Utama */}
-        <div className="form-card" id="utama">
+        {/* 1. Informasi Mempelai */}
+        <div className="form-card" id="informasi">
           <div className="form-title">
             <span>01</span>
             <div>
               <h3>Informasi Mempelai &amp; Waktu</h3>
-              <p>Nama pasangan, nama orang tua, dan tanggal hari-H.</p>
+              <p>Ubah nama pengantin, tanggal pernikahan, dan kutipan cerita cinta.</p>
             </div>
           </div>
           <div className="form-grid">
             <label>
-              Nama Mempelai Wanita
+              Nama Pengantin Wanita
               <input value={data.bride} onChange={(e) => patch("bride", e.target.value)} />
             </label>
             <label>
-              Keterangan Orang Tua Mempelai Wanita
+              Orang Tua Pengantin Wanita
               <input value={data.brideParents} onChange={(e) => patch("brideParents", e.target.value)} />
             </label>
-
             <label>
-              Nama Mempelai Pria
+              Nama Pengantin Pria
               <input value={data.groom} onChange={(e) => patch("groom", e.target.value)} />
             </label>
             <label>
-              Keterangan Orang Tua Mempelai Pria
+              Orang Tua Pengantin Pria
               <input value={data.groomParents} onChange={(e) => patch("groomParents", e.target.value)} />
             </label>
-
             <label>
-              Tanggal Tampilan Singkat
+              Tanggal Singkat (Contoh: 12 . 12 . 2026)
               <input value={data.date} onChange={(e) => patch("date", e.target.value)} />
             </label>
             <label>
-              Tanggal Tampilan Lengkap
+              Tanggal Lengkap (Contoh: Sabtu, 12 Desember 2026)
               <input value={data.dateLong} onChange={(e) => patch("dateLong", e.target.value)} />
             </label>
-
             <label className="wide">
-              Waktu Countdown Timer (Format: YYYY-MM-DDTHH:mm:ss)
+              Tanggal &amp; Waktu Target Hitung Mundur (ISO Format: YYYY-MM-DDTHH:mm:ss)
               <input
                 value={data.countdownDate || "2026-12-12T08:00:00"}
                 onChange={(e) => patch("countdownDate", e.target.value)}
@@ -654,90 +692,50 @@ export default function EditorPage() {
               <p>Atur jadwal, lokasi venue, dan link Google Maps.</p>
             </div>
           </div>
+
           {data.events.map((ev, i) => (
             <div className="event-edit" key={i}>
-              <h4>{ev.title || `Acara ke-${i + 1}`}</h4>
+              <h4>Acara #{i + 1}</h4>
               <div className="form-grid">
                 <label>
-                  Nama Acara
-                  <input
-                    value={ev.title}
-                    onChange={(e) =>
-                      patch(
-                        "events",
-                        data.events.map((x, j) => (j === i ? { ...x, title: e.target.value } : x))
-                      )
-                    }
-                  />
+                  Nama Acara (Contoh: Akad Nikah)
+                  <input value={ev.title} onChange={(e) => updateEvent(i, "title", e.target.value)} />
                 </label>
                 <label>
-                  Waktu Acara
-                  <input
-                    value={ev.time}
-                    onChange={(e) =>
-                      patch(
-                        "events",
-                        data.events.map((x, j) => (j === i ? { ...x, time: e.target.value } : x))
-                      )
-                    }
-                  />
+                  Waktu (Contoh: 08.00 — 10.00 WIB)
+                  <input value={ev.time} onChange={(e) => updateEvent(i, "time", e.target.value)} />
                 </label>
-
                 <label>
-                  Nama Tempat / Hall
-                  <input
-                    value={ev.place}
-                    onChange={(e) =>
-                      patch(
-                        "events",
-                        data.events.map((x, j) => (j === i ? { ...x, place: e.target.value } : x))
-                      )
-                    }
-                  />
+                  Nama Tempat / Gedung
+                  <input value={ev.place} onChange={(e) => updateEvent(i, "place", e.target.value)} />
                 </label>
                 <label>
                   Alamat Lengkap
-                  <input
-                    value={ev.address}
-                    onChange={(e) =>
-                      patch(
-                        "events",
-                        data.events.map((x, j) => (j === i ? { ...x, address: e.target.value } : x))
-                      )
-                    }
-                  />
+                  <input value={ev.address} onChange={(e) => updateEvent(i, "address", e.target.value)} />
                 </label>
-
                 <label className="wide">
-                  URL Google Maps
-                  <input
-                    value={ev.mapsUrl || ""}
-                    onChange={(e) =>
-                      patch(
-                        "events",
-                        data.events.map((x, j) => (j === i ? { ...x, mapsUrl: e.target.value } : x))
-                      )
-                    }
-                  />
+                  Link Google Maps
+                  <input value={ev.mapsUrl || ""} onChange={(e) => updateEvent(i, "mapsUrl", e.target.value)} />
                 </label>
               </div>
             </div>
           ))}
         </div>
 
-        {/* 4. Amplop Digital & Rekening */}
-        <div className="form-card" id="amplop-edit">
+        {/* 4. Rekening & Kado */}
+        <div className="form-card" id="rekening">
           <div className="form-title">
             <span>04</span>
             <div>
-              <h3>Amplop Digital &amp; Alamat Kado</h3>
-              <p>Kelola nomor rekening bank / e-wallet dan alamat pengiriman kado fisik.</p>
+              <h3>Amplop Digital &amp; Hadiah Fisik</h3>
+              <p>Kelola rekening bank/e-wallet untuk tanda kasih tamu.</p>
             </div>
           </div>
+
           {data.bankAccounts.map((b) => (
-            <div key={b.id} style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1fr 0.8fr auto", gap: "10px", marginBottom: "15px", alignItems: "end" }}>
+            <div className="form-grid" key={b.id} style={{ marginBottom: "15px", borderBottom: "1px solid var(--line)", paddingBottom: "15px" }}>
               <label>
-                Bank / e-Wallet
+                Nama Bank / E-Wallet
                 <input value={b.bank} onChange={(e) => updateBankAccount(b.id, "bank", e.target.value)} />
               </label>
               <label>
@@ -777,7 +775,7 @@ export default function EditorPage() {
               />
             </label>
             <label>
-              Nomor HP Penerima
+              Nomor Telepon
               <input
                 value={data.giftAddress?.phone || ""}
                 onChange={(e) => patch("giftAddress", { ...data.giftAddress, phone: e.target.value })}
@@ -835,139 +833,183 @@ export default function EditorPage() {
         </div>
 
         {/* 6. Galeri Foto */}
-        <div className="form-card" id="foto">
+        <div className="form-card photo-editor" id="foto">
           <div className="form-title">
             <span>06</span>
             <div>
               <h3>Foto Sampul &amp; Galeri</h3>
-              <p>Klik foto untuk mengganti. Mendukung hingga 8 foto kenangan.</p>
+              <p>Unggah foto dari perangkat Anda atau ganti URL foto.</p>
             </div>
           </div>
-          <div className="photo-editor">
-            <label className="hero-upload" style={{ backgroundImage: `url('${data.heroImage}')` }}>
+
+          <label className="wide">Foto Banner Utamanya (Cover)</label>
+          <div className="hero-upload" style={{ backgroundImage: `url('${data.heroImage}')` }}>
+            <label style={{ cursor: "pointer" }}>
+              <span>📷 Unggah / Ganti Foto Sampul</span>
               <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-              <span>Ganti Foto Utama (Hero)</span>
             </label>
-            <div className="thumb-grid">
-              {data.gallery.map((src, i) => (
-                <div className="thumb" key={i}>
-                  <img src={src} alt="" />
-                  <label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], i)}
-                    />
-                    Ganti
-                  </label>
-                  <button onClick={() => patch("gallery", data.gallery.filter((_, j) => j !== i))}>×</button>
-                </div>
-              ))}
-              {data.gallery.length < 8 && (
-                <label className="add-photo">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (!f) return;
-                      const r = new FileReader();
-                      r.onload = () => patch("gallery", [...data.gallery, String(r.result)]);
-                      r.readAsDataURL(f);
-                    }}
-                  />
-                  <b>＋</b>
-                  <span>Tambah Foto</span>
+          </div>
+
+          <label className="wide" style={{ marginTop: "25px" }}>Galeri Foto Pre-Wedding ({data.gallery.length} Foto)</label>
+          <div className="thumb-grid">
+            {data.gallery.map((src, i) => (
+              <div className="thumb" key={i}>
+                <img src={src} alt="Thumb" />
+                <label>
+                  Ganti
+                  <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], i)} />
                 </label>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => patch("gallery", data.gallery.filter((_, idx) => idx !== i))}
+                  title="Hapus Foto"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <label className="add-photo">
+              <b>＋</b>
+              <span>Tambah Foto</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      patch("gallery", [...data.gallery, String(reader.result)]);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+            </label>
           </div>
         </div>
 
-        {/* 7. Data RSVP Tamu */}
-        <div className="form-card" id="rsvp-admin">
+        {/* 7. Data RSVP */}
+        <div className="form-card" id="rsvp-data">
           <div className="form-title">
             <span>07</span>
             <div>
-              <h3>Daftar Konfirmasi Kehadiran (RSVP) Realtime</h3>
-              <p>Total Tamu Terkonfirmasi Hadir: <strong>{totalAttending} Orang</strong></p>
+              <h3>Daftar Konfirmasi Kehadiran (RSVP)</h3>
+              <p>Statistik kehadiran tamu yang mengisi formulir RSVP secara live dari cloud Firebase.</p>
             </div>
           </div>
-          {rsvps.length === 0 ? (
-            <p style={{ color: "#87938c", fontSize: "0.85rem" }}>Belum ada data RSVP dari tamu.</p>
-          ) : (
+
+          <div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
+            <div style={{ background: "var(--sage-light)", padding: "14px 20px", borderRadius: "12px", flex: 1 }}>
+              <small style={{ color: "#6a7b72" }}>Total Tamu Konfirmasi Hadir</small>
+              <h3 style={{ margin: "4px 0 0", color: "var(--forest)", fontSize: "1.6rem" }}>{totalAttending} Orang</h3>
+            </div>
+            <div style={{ background: "var(--sage-light)", padding: "14px 20px", borderRadius: "12px", flex: 1 }}>
+              <small style={{ color: "#6a7b72" }}>Total Formulir RSVP Terisi</small>
+              <h3 style={{ margin: "4px 0 0", color: "var(--forest)", fontSize: "1.6rem" }}>{rsvps.length} Respon</h3>
+            </div>
+          </div>
+
+          <div style={{ overflowX: "auto" }}>
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Nama Tamu</th>
-                  <th>Status</th>
-                  <th>Jumlah Pax</th>
-                  <th>Pesan / Catatan</th>
                   <th>Waktu</th>
+                  <th>Nama Tamu</th>
+                  <th>Status Kehadiran</th>
+                  <th>Jumlah Tamu</th>
+                  <th>Catatan / Pesan</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {rsvps.map((r) => (
-                  <tr key={r.id}>
-                    <td><strong>{r.guestName}</strong></td>
-                    <td>
-                      <span className={`badge-attendance ${r.attendance}`}>
-                        {r.attendance === "hadir" ? "✓ Hadir" : r.attendance === "tidak" ? "✕ Tidak" : "? Ragu"}
-                      </span>
-                    </td>
-                    <td>{r.attendance === "hadir" ? `${r.guestCount} Orang` : "-"}</td>
-                    <td>{r.message || "-"}</td>
-                    <td>{r.timestamp}</td>
-                    <td>
-                      <button onClick={() => handleDeleteRSVP(r.id)} style={{ color: "#9b2c2c" }}>Hapus</button>
+                {rsvps.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", color: "#888", padding: "20px" }}>
+                      Belum ada konfirmasi RSVP dari tamu.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  rsvps.map((r) => (
+                    <tr key={r.id}>
+                      <td>{r.timestamp}</td>
+                      <td><strong>{r.guestName}</strong></td>
+                      <td>
+                        <span className={`badge-attendance ${r.attendance}`}>
+                          {r.attendance === "hadir" ? "✓ Hadir" : r.attendance === "tidak" ? "✕ Tidak Hadir" : "? Ragu"}
+                        </span>
+                      </td>
+                      <td>{r.guestCount || 1} Orang</td>
+                      <td>{r.message || "—"}</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRSVP(r.id)}
+                          style={{ color: "#9b2c2c", background: "#fde8e8", padding: "4px 10px", borderRadius: "6px" }}
+                        >
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
 
-        {/* 8. Data Buku Tamu */}
-        <div className="form-card" id="wishes-admin">
+        {/* 8. Buku Tamu (Wishes) */}
+        <div className="form-card" id="wishes-data">
           <div className="form-title">
             <span>08</span>
             <div>
-              <h3>Buku Tamu / Doa &amp; Ucapan ({wishes.length}) Realtime</h3>
-              <p>Semua doa restu dan ucapan hangat dari sahabat &amp; keluarga.</p>
+              <h3>Buku Tamu &amp; Doa Restu ({wishes.length})</h3>
+              <p>Daftar ucapan manis &amp; doa restu dari para sahabat dan keluarga yang tersimpan di cloud Firebase.</p>
             </div>
           </div>
-          {wishes.length === 0 ? (
-            <p style={{ color: "#87938c", fontSize: "0.85rem" }}>Belum ada ucapan.</p>
-          ) : (
+
+          <div style={{ overflowX: "auto" }}>
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Nama</th>
-                  <th>Hubungan</th>
-                  <th>Ucapan</th>
                   <th>Waktu</th>
+                  <th>Nama Tamu</th>
+                  <th>Hubungan</th>
+                  <th>Pesan / Doa Restu</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {wishes.map((w) => (
-                  <tr key={w.id}>
-                    <td><strong>{w.name}</strong></td>
-                    <td>{w.relation}</td>
-                    <td>“{w.message}”</td>
-                    <td>{w.timestamp}</td>
-                    <td>
-                      <button onClick={() => handleDeleteWish(w.id)} style={{ color: "#9b2c2c" }}>Hapus</button>
+                {wishes.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", color: "#888", padding: "20px" }}>
+                      Belum ada ucapan dari tamu.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  wishes.map((w) => (
+                    <tr key={w.id}>
+                      <td>{w.timestamp}</td>
+                      <td><strong>{w.name}</strong></td>
+                      <td><span className="wish-badge">{w.relation}</span></td>
+                      <td>“{w.message}”</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteWish(w.id)}
+                          style={{ color: "#9b2c2c", background: "#fde8e8", padding: "4px 10px", borderRadius: "6px" }}
+                        >
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
