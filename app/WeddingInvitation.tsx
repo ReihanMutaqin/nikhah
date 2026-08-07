@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import QRCode from "qrcode";
 import { defaultWedding, defaultWishes, type RSVPItem, type WeddingData, type WishItem, type CheckInItem } from "./wedding-data";
 import { subscribeWeddingData, subscribeWishes, subscribeCheckIns, addWishToFirebase, addRSVPToFirebase } from "./firebase";
 
@@ -77,6 +78,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const [wishes, setWishes] = useState<WishItem[]>(defaultWishes);
   const [checkIns, setCheckIns] = useState<CheckInItem[]>([]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   // Audio / Music Player State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -126,6 +128,19 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const galleryList = data?.gallery?.length ? data.gallery : defaultWedding.gallery;
   const bankList = data?.bankAccounts?.length ? data.bankAccounts : defaultWedding.bankAccounts;
   const giftAddressInfo = data?.giftAddress || defaultWedding.giftAddress;
+
+  // Generate ISO Standard QR Code for Guest E-Ticket
+  useEffect(() => {
+    if (guest) {
+      QRCode.toDataURL(guest, {
+        width: 260,
+        margin: 1,
+        color: { dark: "#1b382d", light: "#ffffff" },
+      })
+        .then((url) => setQrDataUrl(url))
+        .catch((err) => console.error("QR Code Error:", err));
+    }
+  }, [guest]);
 
   // Dynamic document title update for browser tab
   useEffect(() => {
@@ -717,7 +732,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
             <h4>{couple}</h4>
             <p>UNDANGAN EXCLUSIVE CHECK-IN</p>
           </div>
-          <div className="qr-box">{renderSimpleQrCode(guest)}</div>
+          <div className="qr-box">
+            {qrDataUrl ? (
+              <img src={qrDataUrl} alt={`QR Code ${guest}`} style={{ width: "100%", height: "100%", borderRadius: "8px" }} />
+            ) : (
+              <div style={{ fontSize: "0.8rem", color: "#666" }}>Generating QR...</div>
+            )}
+          </div>
           <div className="ticket-footer">
             Tamu: <strong>{guest}</strong>
           </div>
