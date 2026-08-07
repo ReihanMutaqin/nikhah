@@ -401,11 +401,11 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           <div className="monogram" style={{ animation: "bloomPulse 2s ease-in-out infinite", margin: 0 }}>
             {brideInitial} <i>&amp;</i> {groomInitial}
           </div>
-          <p style={{ font: "500 1.4rem 'Playfair Display', serif", margin: "10px 0 0", color: "var(--gold-light)" }}>
-            Mempersiapkan Undangan...
+          <p style={{ font: "500 1.5rem 'Playfair Display', serif", margin: "10px 0 0", color: "var(--gold-light)" }}>
+            Mempersiapkan Momen Kebahagiaan...
           </p>
-          <span style={{ fontSize: "0.72rem", opacity: 0.7, letterSpacing: "0.15em" }}>
-            MEMUAT DATA CLOUD FIREBASE
+          <span style={{ fontSize: "0.74rem", opacity: 0.8, letterSpacing: "0.22em" }}>
+            THE WEDDING OF {brideName.toUpperCase()} &amp; {groomName.toUpperCase()}
           </span>
         </div>
       </main>
