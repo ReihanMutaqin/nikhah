@@ -13,10 +13,10 @@ export default function Home() {
           <span>RT</span> Ruang Temu
         </Link>
         <div className="nav-links">
-          <a href="#fitur">Fitur Premium</a>
+          <a href="#fitur">Fitur Utama</a>
           <a href="#cara">Cara Pakai</a>
-          <Link className="nav-cta" href="/edit">
-            ⚙️ Mode Edit / Admin
+          <Link href="/edit" style={{ opacity: 0.5, fontSize: "0.8rem" }}>
+            🔒 Admin
           </Link>
         </div>
       </nav>

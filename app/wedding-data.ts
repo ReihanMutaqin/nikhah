@@ -12,7 +12,7 @@ export type EventItem = {
   place: string;
   address: string;
   mapsUrl?: string;
-  calendarStart?: string; // YYYYMMDDTHHMMSS
+  calendarStart?: string;
   calendarEnd?: string;
 };
 
@@ -40,7 +40,7 @@ export type WeddingData = {
   groomParents: string;
   date: string;
   dateLong: string;
-  countdownDate: string; // ISO string e.g. "2026-12-12T08:00:00"
+  countdownDate: string;
   venue: string;
   heroImage: string;
   quote: string;
@@ -55,6 +55,7 @@ export type WeddingData = {
     phone: string;
     address: string;
   };
+  adminPin: string; // PIN Pengaman untuk akses Halaman Edit
 };
 
 export const defaultWedding: WeddingData = {
@@ -127,6 +128,7 @@ export const defaultWedding: WeddingData = {
     phone: "0812-9876-5432",
     address: "Jl. Senopati No. 45, Kebayoran Baru, Jakarta Selatan, 12190",
   },
+  adminPin: "1234", // Default PIN pengaman
 };
 
 export const defaultWishes: WishItem[] = [

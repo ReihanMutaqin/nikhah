@@ -12,11 +12,22 @@ export default function EditorPage() {
   const [wishes, setWishes] = useState<WishItem[]>(defaultWishes);
   const [saved, setSaved] = useState(false);
 
+  // Security / PIN Auth State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [inputPin, setInputPin] = useState("");
+  const [pinError, setPinError] = useState(false);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const savedData = localStorage.getItem(STORAGE_KEY);
+      let loadedData = defaultWedding;
       if (savedData) {
-        try { setData(JSON.parse(savedData)); } catch (e) { console.warn(e); }
+        try {
+          loadedData = JSON.parse(savedData);
+          setData(loadedData);
+        } catch (e) {
+          console.warn(e);
+        }
       }
 
       const savedRsvps = localStorage.getItem(RSVP_STORAGE_KEY);
@@ -28,9 +39,33 @@ export default function EditorPage() {
       if (savedWishes) {
         try { setWishes(JSON.parse(savedWishes)); } catch (e) { console.warn(e); }
       }
+
+      // Check if already authenticated in this session
+      const auth = sessionStorage.getItem("ruang-temu-auth");
+      if (auth === "true") {
+        setIsAuthorized(true);
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const correctPin = data.adminPin || "1234";
+    if (inputPin === correctPin) {
+      setIsAuthorized(true);
+      sessionStorage.setItem("ruang-temu-auth", "true");
+      setPinError(false);
+    } else {
+      setPinError(true);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthorized(false);
+    sessionStorage.removeItem("ruang-temu-auth");
+    setInputPin("");
+  };
 
   const patch = (key: keyof WeddingData, value: WeddingData[keyof WeddingData]) =>
     setData((d) => ({ ...d, [key]: value }));
@@ -65,7 +100,6 @@ export default function EditorPage() {
     URL.revokeObjectURL(a.href);
   };
 
-  // Bank account helpers
   const addBankAccount = () => {
     const newAcc: BankAccount = {
       id: "bank-" + Date.now(),
@@ -107,6 +141,96 @@ export default function EditorPage() {
     .filter((r) => r.attendance === "hadir")
     .reduce((sum, r) => sum + (r.guestCount || 1), 0);
 
+  // Render PIN Lock Screen if not authorized
+  if (!isAuthorized) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background: "var(--forest)",
+          color: "white",
+          padding: "20px",
+        }}
+      >
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.08)",
+            backdropFilter: "blur(14px)",
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            borderRadius: "24px",
+            padding: "45px 35px",
+            maxWidth: "420px",
+            width: "100%",
+            textAlign: "center",
+            boxShadow: "0 25px 60px rgba(0,0,0,0.3)",
+          }}
+        >
+          <div
+            style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "50%",
+              background: "var(--gold-light)",
+              color: "var(--forest)",
+              display: "grid",
+              placeItems: "center",
+              margin: "0 auto 20px",
+              fontSize: "1.6rem",
+            }}
+          >
+            🔒
+          </div>
+          <p className="eyebrow" style={{ color: "var(--gold-light)" }}>
+            RUANG TEMU ADMIN
+          </p>
+          <h2 style={{ font: "500 2rem 'Playfair Display', serif", margin: "10px 0 6px" }}>Akses Terkunci</h2>
+          <p style={{ fontSize: "0.85rem", color: "#b7c7c0", margin: "0 0 25px", lineHeight: "1.6" }}>
+            Masukkan PIN Keamanan untuk mengakses ruang edit &amp; kelola data undangan.
+          </p>
+
+          <form onSubmit={handleLogin} style={{ display: "grid", gap: "16px" }}>
+            <input
+              type="password"
+              placeholder="Masukkan PIN Admin (Default: 1234)"
+              value={inputPin}
+              onChange={(e) => setInputPin(e.target.value)}
+              style={{
+                padding: "14px 18px",
+                borderRadius: "12px",
+                border: pinError ? "1px solid #ff7b7b" : "1px solid rgba(255,255,255,0.3)",
+                background: "rgba(255,255,255,0.15)",
+                color: "white",
+                textAlign: "center",
+                fontSize: "1.1rem",
+                letterSpacing: "0.2em",
+                outline: "none",
+              }}
+              required
+              autoFocus
+            />
+
+            {pinError && (
+              <p style={{ color: "#ff8b8b", fontSize: "0.78rem", margin: 0 }}>
+                ❌ PIN salah! Silakan periksa kembali.
+              </p>
+            )}
+
+            <button type="submit" className="button light" style={{ width: "100%", marginTop: "6px" }}>
+              🔓 Masuk Ruang Edit
+            </button>
+          </form>
+
+          <Link href="/reihan&pasangan" style={{ display: "block", marginTop: "22px", fontSize: "0.78rem", color: "#a8bdb3", textDecoration: "underline" }}>
+            ← Kembali ke Undangan
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  // Render Authorized Editor Dashboard
   return (
     <main className="editor-shell">
       <aside className="editor-side">
@@ -116,27 +240,40 @@ export default function EditorPage() {
         <div>
           <p>ADMIN CONTROL PANEL</p>
           <h1>Manajer Undangan</h1>
-          <span>Semua perubahan tersimpan otomatis di browser ini. Gunakan ekspor data untuk cadangan.</span>
+          <span>Perubahan tersimpan di browser ini. Password/PIN dilindungi.</span>
         </div>
         <nav>
           <a href="#utama">1. Informasi Mempelai</a>
-          <a href="#acara-edit">2. Detail Acara</a>
-          <a href="#amplop-edit">3. Rekening &amp; Kado</a>
-          <a href="#musik-edit">4. Musik &amp; Media</a>
-          <a href="#foto">5. Galeri Foto</a>
-          <a href="#rsvp-admin">6. Data RSVP Tamu ({rsvps.length})</a>
-          <a href="#wishes-admin">7. Buku Tamu ({wishes.length})</a>
+          <a href="#keamanan">2. Keamanan PIN Admin</a>
+          <a href="#acara-edit">3. Detail Acara</a>
+          <a href="#amplop-edit">4. Rekening &amp; Kado</a>
+          <a href="#musik-edit">5. Musik &amp; Media</a>
+          <a href="#foto">6. Galeri Foto</a>
+          <a href="#rsvp-admin">7. Data RSVP ({rsvps.length})</a>
+          <a href="#wishes-admin">8. Buku Tamu ({wishes.length})</a>
         </nav>
-        <Link className="preview-link" href="/reihan&pasangan">
-          Lihat Pratinjau Undangan ↗
-        </Link>
+
+        <button
+          onClick={handleLogout}
+          style={{
+            marginTop: "auto",
+            border: "1px solid rgba(255,255,255,0.25)",
+            padding: "11px",
+            color: "#ffaaaa",
+            fontSize: "0.8rem",
+            borderRadius: "8px",
+            textAlign: "center",
+          }}
+        >
+          🔒 Kunci Ruang Edit (Logout)
+        </button>
       </aside>
 
       <section className="editor-main">
         <div className="editor-top">
           <div>
             <p className="eyebrow">WEDDING CONTENT MANAGER</p>
-            <h2>Pengaturan Undangan Complete</h2>
+            <h2>Pengaturan Undangan Protected</h2>
           </div>
           <div className="editor-actions">
             <button onClick={exportData}>💾 Ekspor Data JSON</button>
@@ -207,10 +344,32 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* 2. Detail Acara */}
-        <div className="form-card" id="acara-edit">
+        {/* 2. Keamanan PIN Admin */}
+        <div className="form-card" id="keamanan">
           <div className="form-title">
             <span>02</span>
+            <div>
+              <h3>Keamanan &amp; PIN Akses Halaman Edit</h3>
+              <p>Ubah PIN rahasia untuk mencegah sembarang orang mengubah isi undangan.</p>
+            </div>
+          </div>
+          <div className="form-grid">
+            <label className="wide">
+              PIN Keamanan Admin (Default: 1234)
+              <input
+                type="text"
+                value={data.adminPin || "1234"}
+                onChange={(e) => patch("adminPin", e.target.value)}
+                placeholder="Masukkan 4-8 angka/karakter PIN baru"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* 3. Detail Acara */}
+        <div className="form-card" id="acara-edit">
+          <div className="form-title">
+            <span>03</span>
             <div>
               <h3>Rangkaian Acara (Akad &amp; Resepsi)</h3>
               <p>Atur jadwal, lokasi venue, dan link Google Maps.</p>
@@ -287,10 +446,10 @@ export default function EditorPage() {
           ))}
         </div>
 
-        {/* 3. Amplop Digital & Rekening */}
+        {/* 4. Amplop Digital & Rekening */}
         <div className="form-card" id="amplop-edit">
           <div className="form-title">
-            <span>03</span>
+            <span>04</span>
             <div>
               <h3>Amplop Digital &amp; Alamat Kado</h3>
               <p>Kelola nomor rekening bank / e-wallet dan alamat pengiriman kado fisik.</p>
@@ -356,10 +515,10 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* 4. Musik & Media */}
+        {/* 5. Musik & Media */}
         <div className="form-card" id="musik-edit">
           <div className="form-title">
-            <span>04</span>
+            <span>05</span>
             <div>
               <h3>Lagu Latar (Audio Background)</h3>
               <p>Masukkan URL audio MP3 lagu pernikahan kesukaan pasangan.</p>
@@ -373,10 +532,10 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* 5. Galeri Foto */}
+        {/* 6. Galeri Foto */}
         <div className="form-card" id="foto">
           <div className="form-title">
-            <span>05</span>
+            <span>06</span>
             <div>
               <h3>Foto Sampul &amp; Galeri</h3>
               <p>Klik foto untuk mengganti. Mendukung hingga 8 foto kenangan.</p>
@@ -423,10 +582,10 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* 6. Data RSVP Tamu */}
+        {/* 7. Data RSVP Tamu */}
         <div className="form-card" id="rsvp-admin">
           <div className="form-title">
-            <span>06</span>
+            <span>07</span>
             <div>
               <h3>Daftar Konfirmasi Kehadiran (RSVP)</h3>
               <p>Total Tamu Terkonfirmasi Hadir: <strong>{totalAttending} Orang</strong></p>
@@ -468,10 +627,10 @@ export default function EditorPage() {
           )}
         </div>
 
-        {/* 7. Data Buku Tamu */}
+        {/* 8. Data Buku Tamu */}
         <div className="form-card" id="wishes-admin">
           <div className="form-title">
-            <span>07</span>
+            <span>08</span>
             <div>
               <h3>Buku Tamu / Doa &amp; Ucapan ({wishes.length})</h3>
               <p>Semua doa restu dan ucapan hangat dari sahabat &amp; keluarga.</p>

@@ -643,7 +643,9 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       {/* Footer */}
       <footer className="invite-footer">
         <p>Made with ❤️ for {couple}</p>
-        <Link href="/edit">⚙️ Edit Data Undangan</Link>
+        <Link href="/edit" title="Ruang Edit (Khusus Pemilik)" style={{ opacity: 0.35, fontSize: "0.7rem" }}>
+          🔒
+        </Link>
       </footer>
     </main>
   );
