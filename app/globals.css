@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap');
 
 :root {
   --ink: #142a22;
@@ -15,6 +15,54 @@
   --line: #dfe5df;
   --shadow: 0 15px 35px rgba(20, 42, 34, 0.07);
   --shadow-lg: 0 25px 60px rgba(18, 40, 32, 0.14);
+}
+
+.cute-font {
+  font-family: 'Caveat', cursive !important;
+  font-size: 2rem;
+  color: var(--gold-dark);
+}
+
+/* CUTEST SCRAPBOOK & WASHI TAPE PHOTO FRAMES */
+.washi-tape-top {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 90px;
+  height: 24px;
+  background: rgba(230, 210, 170, 0.75);
+  border: 1px dashed rgba(180, 150, 100, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+  pointer-events: none;
+}
+.cute-polaroid-frame {
+  background: white;
+  padding: 14px 14px 28px 14px;
+  border-radius: 16px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+  border: 1px solid #eae5d9;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+.cute-polaroid-frame:hover {
+  transform: rotate(-1.5deg) scale(1.02);
+}
+.cute-sticker-badge {
+  position: absolute;
+  bottom: -15px;
+  right: -10px;
+  background: #fff8eb;
+  border: 2px solid #e2c082;
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-family: 'Caveat', cursive;
+  font-size: 1.25rem;
+  color: #8c6a23;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  transform: rotate(4deg);
+  z-index: 5;
 }
 
 * {

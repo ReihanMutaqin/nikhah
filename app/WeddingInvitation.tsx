@@ -432,17 +432,21 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         <FloatingPetals />
 
         <div className="cover-inner animated-fade-in">
-          <p>THE WEDDING OF</p>
-          <h1>
-            {brideName} <i>&</i> {groomName}
+          <span className="cute-font" style={{ color: "var(--gold-light)", fontSize: "2.3rem", display: "block", marginBottom: "4px" }}>
+            ✨ Save The Date! Kita Mau Nikah Niih! ✨
+          </span>
+          <p style={{ letterSpacing: "0.25em", opacity: 0.9, margin: 0 }}>THE WEDDING OF</p>
+          <h1 style={{ marginTop: "4px" }}>
+            {brideName} <i>&amp;</i> {groomName}
           </h1>
-          <div className="guest-card">
-            <small>Kepada Yth. Bapak/Ibu/Saudara/i</small>
-            <strong>{guest}</strong>
-            <span>Mohon maaf apabila ada kesalahan penulisan nama atau gelar.</span>
+          <div className="guest-card" style={{ position: "relative", border: "2px dashed rgba(255,255,255,0.4)" }}>
+            <div className="washi-tape-top" />
+            <small style={{ fontSize: "0.78rem" }}>Spesial Untuk Sahabat / Keluarga Kami:</small>
+            <strong style={{ fontSize: "1.45rem", color: "var(--forest)" }}>{guest}</strong>
+            <span style={{ fontSize: "0.78rem" }}>Mohon doa restunya yaa! Buka undangannya di bawah ini 💌</span>
           </div>
-          <button className="button light" onClick={handleOpenInvitation}>
-            ✉️ Buka Undangan
+          <button className="button light" onClick={handleOpenInvitation} style={{ borderRadius: "99px", padding: "14px 32px", fontSize: "0.95rem" }}>
+            💌 Buka Undangan Pernikahan
           </button>
         </div>
       </main>
@@ -568,8 +572,21 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
         <div className="gallery-grid">
           {galleryList.map((src, i) => (
-            <div className="gallery-item" key={`${src}-${i}`} onClick={() => setLightboxIndex(i)}>
-              <img src={src} alt={`Momen ${couple} ${i + 1}`} />
+            <div
+              className="cute-polaroid-frame"
+              key={`${src}-${i}`}
+              onClick={() => setLightboxIndex(i)}
+              style={{ cursor: "pointer" }}
+            >
+              <div className="washi-tape-top" />
+              <img
+                src={src}
+                alt={`Momen ${couple} ${i + 1}`}
+                style={{ width: "100%", height: "260px", objectFit: "cover", borderRadius: "10px" }}
+              />
+              <span className="cute-font" style={{ display: "block", marginTop: "10px", textAlign: "center", fontSize: "1.55rem" }}>
+                #OurStory0{i + 1} 💕
+              </span>
             </div>
           ))}
         </div>
