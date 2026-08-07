@@ -67,10 +67,10 @@ export type WeddingData = {
 };
 
 export const defaultWedding: WeddingData = {
-  bride: "Aruna Kinanti",
-  brideParents: "Putri dari Bpk. Bambang & Ibu Sri Hastuti",
-  groom: "Bima Sampurna",
-  groomParents: "Putra dari Bpk. Herman & Ibu Ratna Dewi",
+  bride: "Adira",
+  brideParents: "",
+  groom: "Reihan",
+  groomParents: "",
   date: "12 . 12 . 2026",
   dateLong: "Sabtu, 12 Desember 2026",
   countdownDate: "2026-12-12T08:00:00",
@@ -83,18 +83,18 @@ export const defaultWedding: WeddingData = {
     {
       title: "Akad Nikah",
       time: "08.00 — 10.00 WIB",
-      place: "Grand Ballroom - The Langham",
-      address: "District 8, SCBD, Lot 28, Jakarta Selatan",
-      mapsUrl: "https://maps.google.com/?q=The+Langham+Jakarta",
+      place: "Grand Ballroom",
+      address: "District 8, SCBD, Jakarta Selatan",
+      mapsUrl: "https://maps.google.com/?q=Jakarta",
       calendarStart: "20261212T010000Z",
       calendarEnd: "20261212T030000Z",
     },
     {
       title: "Resepsi Pernikahan",
       time: "11.00 — 14.00 WIB",
-      place: "Grand Ballroom - The Langham",
-      address: "District 8, SCBD, Lot 28, Jakarta Selatan",
-      mapsUrl: "https://maps.google.com/?q=The+Langham+Jakarta",
+      place: "Grand Ballroom",
+      address: "District 8, SCBD, Jakarta Selatan",
+      mapsUrl: "https://maps.google.com/?q=Jakarta",
       calendarStart: "20261212T040000Z",
       calendarEnd: "20261212T070000Z",
     },
@@ -107,34 +107,27 @@ export const defaultWedding: WeddingData = {
     "https://images.unsplash.com/photo-1519741347686-c1e0a0dfef79?auto=format&fit=crop&w=1200&q=85",
     "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=85",
   ],
-  musicUrl: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-wedding-piano-112191.mp3",
+  musicUrl: "", // No default sample music!
   bankAccounts: [
     {
       id: "bca-1",
       bank: "BCA",
       accountNumber: "8820918234",
-      accountHolder: "Aruna Kinanti",
+      accountHolder: "Adira",
       logoText: "BCA",
     },
     {
       id: "mandiri-1",
       bank: "Bank Mandiri",
       accountNumber: "1370019283745",
-      accountHolder: "Bima Sampurna",
+      accountHolder: "Reihan",
       logoText: "MANDIRI",
-    },
-    {
-      id: "gopay-1",
-      bank: "GoPay / OVO",
-      accountNumber: "081298765432",
-      accountHolder: "Bima Sampurna",
-      logoText: "E-WALLET",
     },
   ],
   giftAddress: {
-    recipient: "Aruna & Bima",
+    recipient: "Adira & Reihan",
     phone: "0812-9876-5432",
-    address: "Jl. Senopati No. 45, Kebayoran Baru, Jakarta Selatan, 12190",
+    address: "Jl. Senopati No. 45, Kebayoran Baru, Jakarta Selatan",
   },
   adminPin: "1234", // Default PIN pengaman
 };
@@ -144,21 +137,14 @@ export const defaultWishes: WishItem[] = [
     id: "w-1",
     name: "Dimas & Sarah",
     relation: "Sahabat",
-    message: "Selamat untuk Aruna & Bima! Semoga menjadi keluarga yang sakinah, mawaddah, warahmah. Lancar terus sampai hari H yaa! ✨",
+    message: "Selamat untuk Adira & Reihan! Semoga menjadi keluarga yang sakinah, mawaddah, warahmah. Lancar terus sampai hari H yaa! ✨",
     timestamp: "Baru saja",
   },
   {
     id: "w-2",
-    name: "Keluarga Besar Sastro",
+    name: "Keluarga Besar",
     relation: "Keluarga",
     message: "Barakallahu lakuma wa baraka 'alaikuma wa jama'a bainakuma fii khair. Turut bahagia untuk kalian berdua.",
     timestamp: "1 jam lalu",
-  },
-  {
-    id: "w-3",
-    name: "Rian Hidayat",
-    relation: "Rekan Kerja",
-    message: "Happy wedding Bima & Aruna! Semoga makin sukses dan bahagia selalu dalam membina rumah tangga.",
-    timestamp: "3 jam lalu",
   },
 ];
