@@ -84,6 +84,42 @@ function BotanicalDivider() {
   );
 }
 
+// Cute 3D Wax Seal Stamp Vector Badge
+function WaxSealBadgeSVG() {
+  return (
+    <svg className="wax-seal-badge" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="44" fill="#9e7d3b" />
+      <circle cx="50" cy="50" r="40" fill="#c5a059" />
+      <circle cx="50" cy="50" r="34" stroke="#f6efe2" strokeWidth="2" strokeDasharray="4 3" opacity="0.8" />
+      <path d="M50 24C52 34 60 42 70 45C60 48 52 56 50 66C48 56 40 48 30 45C40 42 48 34 50 24Z" fill="#f6efe2" />
+      <circle cx="50" cy="45" r="5" fill="#9e7d3b" />
+    </svg>
+  );
+}
+
+// Torn Paper Edge Vector (Realistic Cutout Effect)
+function TornPaperEdgeTopSVG({ color = "#fcfbf7" }: { color?: string }) {
+  return (
+    <svg className="torn-paper-edge-top" viewBox="0 0 1200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
+      <path d="M0 24L30 14L60 20L100 8L150 22L200 10L260 20L310 12L370 24L420 14L480 22L540 10L600 20L660 8L720 22L780 12L840 24L900 14L960 22L1020 8L1080 20L1140 12L1200 24V0H0V24Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+// Cute Line-art Flower Doodle SVG
+function CuteDoodleFlowerSVG() {
+  return (
+    <svg className="cute-doodle-flower" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="30" cy="30" r="10" fill="#c5a059" />
+      <path d="M30 8C35 16 35 20 30 20C25 20 25 16 30 8Z" fill="#7e9b8c" />
+      <path d="M30 52C35 44 35 40 30 40C25 40 25 44 30 52Z" fill="#7e9b8c" />
+      <path d="M8 30C16 35 20 35 20 30C20 25 16 25 8 30Z" fill="#7e9b8c" />
+      <path d="M52 30C44 35 40 35 40 30C40 25 44 25 52 30Z" fill="#7e9b8c" />
+      <circle cx="30" cy="30" r="4" fill="#ffffff" />
+    </svg>
+  );
+}
+
 // Floating Animated Rose Petals Background
 function FloatingPetals() {
   const petals = [
@@ -431,7 +467,11 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         <FloralCornerOrnament position="br" />
         <FloatingPetals />
 
-        <div className="cover-inner animated-fade-in">
+        <div className="cover-inner animated-fade-in" style={{ position: "relative" }}>
+          <div style={{ marginBottom: "12px" }}>
+            <WaxSealBadgeSVG />
+          </div>
+
           <span className="cute-font" style={{ color: "var(--gold-light)", fontSize: "2.3rem", display: "block", marginBottom: "4px" }}>
             ✨ Save The Date! Kita Mau Nikah Niih! ✨
           </span>
