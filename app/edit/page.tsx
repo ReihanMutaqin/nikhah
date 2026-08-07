@@ -157,15 +157,19 @@ export default function EditPage() {
   const save = async () => {
     setSavingLoading(true);
     const res = await saveWeddingDataToFirebase(data);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn("LocalStorage quota full, using Firebase memory sync:", e);
+    }
     setSavingLoading(false);
 
     if (res.success) {
       setSaved(true);
-      showToast("Tersimpan di Cloud Firebase! Semua HP & Perangkat otomatis ter-update.");
+      showToast("Tersimpan secara Live! Perubahan Anda langsung ter-update.");
       setTimeout(() => setSaved(false), 2500);
     } else {
-      showToast(`Gagal menyimpan: ${res.message || "Permission denied"}. Harap aktifkan Rules di Firebase Console!`);
+      showToast(`Gagal menyimpan: ${res.message || "Permission denied"}.`);
     }
   };
 
