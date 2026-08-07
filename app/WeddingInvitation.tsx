@@ -527,9 +527,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     );
   }
 
-  const coverBg = data?.heroImage
-    ? `linear-gradient(180deg, rgba(16,28,24,.3), rgba(16,28,24,.78)), url('${data.heroImage}')`
-    : `linear-gradient(180deg, #122820, #0c1914)`;
+  const coverBg = `url('/images/garden_cover_bg.png')`;
 
   // Covered View (Opening Envelope)
   if (!opened) {
@@ -540,6 +538,9 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           backgroundImage: coverBg,
         }}
       >
+        <img className="garden-gate-cover" src="/garden-gate.svg" alt="" />
+        <img className="botanical-corner-art botanical-corner-art-left" src="/botanical-corner.svg" alt="" />
+        <img className="botanical-corner-art botanical-corner-art-right" src="/botanical-corner.svg" alt="" />
         <FloralCornerOrnament position="tl" />
         <FloralCornerOrnament position="tr" />
         <FloralCornerOrnament position="bl" />
@@ -633,11 +634,12 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
       {/* Hero Banner */}
       <header
-        className="invite-hero"
+        className="invite-hero garden-invite-hero"
         style={{
           backgroundImage: coverBg,
         }}
       >
+        <img className="garden-gate-cover" src="/garden-gate.svg" alt="" />
         <div className="animated-fade-in">
           <p>WE ARE GETTING MARRIED</p>
           <h1>
@@ -651,8 +653,9 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       <VineBranchSVG />
 
       {/* Welcome & Mempelai Parents */}
-      <section className="welcome" id="mempelai" style={{ position: "relative" }}>
+      <section className="welcome" id="mempelai" style={{ position: "relative", backgroundImage: "url('/images/garden_section_bg.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
         <ButterflySVG style={{ position: "absolute", top: "20px", right: "10%", width: "42px", opacity: 0.6 }} />
+        {data?.heroImage && <div className="couple-portrait" style={{ backgroundImage: `url('${data.heroImage}')` }} aria-label={`Foto ${brideName} dan ${groomName}`} />}
         <p className="eyebrow">DEAR, {guest.toUpperCase()}</p>
         <h2>
           Dengan penuh sukacita,
@@ -683,7 +686,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       <VineBranchSVG />
 
       {/* Gallery Section (Positioned Elegantly after Mempelai) */}
-      <section className="gallery-section" id="galeri" style={{ position: "relative" }}>
+      <section className="gallery-section" id="galeri" style={{ position: "relative", backgroundImage: "url('/images/garden_section_bg.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
         <ButterflySVG style={{ position: "absolute", top: "30px", left: "8%", width: "38px", opacity: 0.5, transform: "rotate(-15deg)" }} />
         <div className="section-head">
           <div>
