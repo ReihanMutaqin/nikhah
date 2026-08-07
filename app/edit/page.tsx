@@ -833,57 +833,66 @@ export default function EditPage() {
         </div>
 
         {/* 6. Galeri Foto */}
-        <div className="form-card" id="foto">
+        <div className="form-card photo-editor" id="foto">
           <div className="form-title">
             <span>06</span>
             <div>
-              <h3>Foto Sampul Utama &amp; Galeri</h3>
-              <p>Unggah foto dari HP/laptop Anda atau masukkan URL link foto.</p>
+              <h3>Foto Sampul Utama &amp; Galeri Pre-Wedding</h3>
+              <p>Unggah foto langsung dari HP/laptop Anda atau ganti URL foto.</p>
             </div>
           </div>
 
           {/* FOTO SAMPUL UTAMA */}
-          <div className="form-grid" style={{ marginBottom: "30px", borderBottom: "1px dashed var(--line)", paddingBottom: "25px" }}>
-            <label className="wide">
-              Unggah Foto Sampul Utama (Cover Banner)
+          <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--forest)", marginBottom: "10px", display: "block" }}>
+            Foto Sampul Utama (Cover Banner)
+          </label>
+
+          <div
+            className="hero-upload"
+            style={{
+              backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.5)), url('${data.heroImage || defaultWedding.heroImage}')`,
+              marginBottom: "16px",
+            }}
+          >
+            <label style={{ cursor: "pointer", zIndex: 2 }}>
+              <span>📷 Unggah / Ganti Foto Sampul</span>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
-                style={{ padding: "10px", background: "var(--sage-light)", borderRadius: "8px", cursor: "pointer" }}
+                style={{ display: "none" }}
               />
             </label>
-
-            <label className="wide">
-              Atau Tempel URL Link Foto Sampul
-              <input
-                type="text"
-                value={data.heroImage || ""}
-                onChange={(e) => patch("heroImage", e.target.value)}
-                placeholder="https://.../foto-sampul.jpg"
-              />
-            </label>
-
-            {data.heroImage && (
-              <div className="wide">
-                <p style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--forest)", marginBottom: "8px" }}>
-                  🖼️ Preview Foto Sampul Utama:
-                </p>
-                <div style={{ height: "220px", borderRadius: "14px", overflow: "hidden", border: "1px solid var(--line)" }}>
-                  <img src={data.heroImage} alt="Cover Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </div>
-              </div>
-            )}
           </div>
 
-          <label className="wide" style={{ marginTop: "25px" }}>Galeri Foto Pre-Wedding ({data.gallery.length} Foto)</label>
+          <label style={{ display: "grid", gap: "8px", fontSize: "0.78rem", fontWeight: 600, color: "#5d6d65", marginBottom: "30px" }}>
+            Atau Tempel URL Link Foto Sampul
+            <input
+              type="text"
+              value={data.heroImage || ""}
+              onChange={(e) => patch("heroImage", e.target.value)}
+              placeholder="https://.../foto-sampul.jpg"
+              style={{ border: "1px solid #d9e0dc", padding: "12px 14px", borderRadius: "10px", background: "#fafbf9", outline: "none" }}
+            />
+          </label>
+
+          {/* GALERI PRE-WEDDING */}
+          <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--forest)", marginBottom: "12px", display: "block" }}>
+            Galeri Foto Pre-Wedding ({data.gallery.length} Foto)
+          </label>
+
           <div className="thumb-grid">
             {data.gallery.map((src, i) => (
               <div className="thumb" key={i}>
-                <img src={src} alt="Thumb" />
-                <label>
-                  Ganti
-                  <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], i)} />
+                <img src={src} alt={`Pre-wedding ${i + 1}`} />
+                <label style={{ cursor: "pointer" }}>
+                  🔄 Ganti
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], i)}
+                    style={{ display: "none" }}
+                  />
                 </label>
                 <button
                   type="button"
@@ -894,7 +903,8 @@ export default function EditPage() {
                 </button>
               </div>
             ))}
-            <label className="add-photo">
+
+            <label className="add-photo" style={{ cursor: "pointer" }}>
               <b>＋</b>
               <span>Tambah Foto</span>
               <input
@@ -903,13 +913,10 @@ export default function EditPage() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      patch("gallery", [...data.gallery, String(reader.result)]);
-                    };
-                    reader.readAsDataURL(file);
+                    upload(file, data.gallery.length);
                   }
                 }}
+                style={{ display: "none" }}
               />
             </label>
           </div>
