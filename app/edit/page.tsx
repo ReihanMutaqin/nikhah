@@ -906,14 +906,16 @@ export default function EditPage() {
 
             <label className="add-photo" style={{ cursor: "pointer" }}>
               <b>＋</b>
-              <span>Tambah Foto</span>
+              <span>Tambah Banyak Foto</span>
+              <small style={{ fontSize: "0.65rem", opacity: 0.8, display: "block" }}>Pilih beberapa foto sekaligus</small>
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    upload(file, data.gallery.length);
+                  const files = e.target.files;
+                  if (files && files.length > 0) {
+                    Array.from(files).forEach((file) => upload(file));
                   }
                 }}
                 style={{ display: "none" }}
