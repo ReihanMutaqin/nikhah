@@ -152,26 +152,31 @@ function TornPaperEdgeTopSVG({ color = "#fcfbf7" }: { color?: string }) {
   );
 }
 
-// Animated Butterfly SVG
+// Animated Butterfly SVG (GIF style wing flapping)
 function ButterflySVG({ style }: { style?: React.CSSProperties }) {
   return (
-    <svg style={style} className="cute-doodle-flower" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Left wing */}
-      <ellipse cx="18" cy="16" rx="14" ry="12" fill="#ce93d8" opacity="0.7" />
-      <ellipse cx="16" cy="28" rx="10" ry="8" fill="#ba68c8" opacity="0.6" />
-      <circle cx="18" cy="14" r="3" fill="#f3e5f5" opacity="0.8" />
-      {/* Right wing */}
-      <ellipse cx="42" cy="16" rx="14" ry="12" fill="#ce93d8" opacity="0.7" />
-      <ellipse cx="44" cy="28" rx="10" ry="8" fill="#ba68c8" opacity="0.6" />
-      <circle cx="42" cy="14" r="3" fill="#f3e5f5" opacity="0.8" />
-      {/* Body */}
-      <ellipse cx="30" cy="20" rx="2.5" ry="14" fill="#4a148c" opacity="0.7" />
-      {/* Antennae */}
-      <path d="M29 6C26 2 22 1 20 2" stroke="#4a148c" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-      <path d="M31 6C34 2 38 1 40 2" stroke="#4a148c" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-      <circle cx="20" cy="2" r="1.5" fill="#ce93d8" />
-      <circle cx="40" cy="2" r="1.5" fill="#ce93d8" />
-    </svg>
+    <div className="gif-butterfly-container" style={style}>
+      <svg viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "50px", height: "40px" }}>
+        {/* Left wing */}
+        <g className="wing-l">
+          <ellipse cx="18" cy="16" rx="14" ry="12" fill="#ce93d8" opacity="0.85" />
+          <ellipse cx="16" cy="28" rx="10" ry="8" fill="#ba68c8" opacity="0.8" />
+          <circle cx="18" cy="14" r="3.5" fill="#ffffff" />
+        </g>
+        {/* Right wing */}
+        <g className="wing-r">
+          <ellipse cx="42" cy="16" rx="14" ry="12" fill="#ce93d8" opacity="0.85" />
+          <ellipse cx="44" cy="28" rx="10" ry="8" fill="#ba68c8" opacity="0.8" />
+          <circle cx="42" cy="14" r="3.5" fill="#ffffff" />
+        </g>
+        {/* Body */}
+        <ellipse cx="30" cy="20" rx="2.5" ry="14" fill="#4a148c" opacity="0.85" />
+        <path d="M29 6C26 2 22 1 20 2" stroke="#4a148c" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M31 6C34 2 38 1 40 2" stroke="#4a148c" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="20" cy="2" r="1.5" fill="#e1bee7" />
+        <circle cx="40" cy="2" r="1.5" fill="#e1bee7" />
+      </svg>
+    </div>
   );
 }
 
@@ -498,29 +503,30 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     showToast("Doa & ucapan Anda berhasil dikirim!");
   };
 
-  // Fullscreen Monogram Loading Screen while fetching initial Firebase data
   if (isLoading) {
     return (
       <main
         style={{
           minHeight: "100vh",
-          background: "var(--forest)",
-          color: "white",
+          backgroundImage: "url('/images/garden_cover_bg.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          color: "var(--forest)",
           display: "grid",
           placeItems: "center",
           textAlign: "center",
           padding: "20px",
         }}
       >
-        <div className="animated-fade-in" style={{ display: "grid", gap: "16px", justifyItems: "center" }}>
-          <div className="monogram" style={{ animation: "bloomPulse 2s ease-in-out infinite", margin: 0 }}>
-            {brideInitial} <i>&amp;</i> {groomInitial}
+        <div className="animated-fade-in" style={{ display: "grid", gap: "12px", justifyItems: "center" }}>
+          <div className="gif-flower-spinner">
+            <span style={{ fontSize: "2rem" }}>🌸</span>
           </div>
-          <p style={{ font: "500 1.5rem 'Playfair Display', serif", margin: "10px 0 0", color: "var(--gold-light)" }}>
-            Mempersiapkan Momen Kebahagiaan...
+          <p className="cute-font" style={{ fontSize: "2.4rem", color: "var(--gold-dark)", margin: "4px 0 0" }}>
+            {brideName} &amp; {groomName}
           </p>
-          <span style={{ fontSize: "0.74rem", opacity: 0.8, letterSpacing: "0.22em" }}>
-            THE WEDDING OF {brideName.toUpperCase()} &amp; {groomName.toUpperCase()}
+          <span style={{ fontSize: "0.78rem", opacity: 0.88, letterSpacing: "0.22em", color: "var(--forest)", fontWeight: 600 }}>
+            MEMPERSIAPKAN MOMEN KEBAHAGIAAN...
           </span>
         </div>
       </main>
