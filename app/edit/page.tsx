@@ -5,6 +5,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { defaultWedding, defaultWishes, type BankAccount, type RSVPItem, type WeddingData, type WishItem } from "../wedding-data";
 import { RSVP_STORAGE_KEY, STORAGE_KEY, WISHES_STORAGE_KEY } from "../WeddingInvitation";
+import {
+  subscribeWeddingData,
+  subscribeRSVPs,
+  subscribeWishes,
+  saveWeddingDataToFirebase,
+  deleteRSVPFromFirebase,
+  deleteWishFromFirebase,
+} from "../firebase";
 
 type BulkGuest = {
   id: string;
@@ -20,6 +28,7 @@ export default function EditorPage() {
   const [rsvps, setRsvps] = useState<RSVPItem[]>([]);
   const [wishes, setWishes] = useState<WishItem[]>(defaultWishes);
   const [saved, setSaved] = useState(false);
+  const [savingLoading, setSavingLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Security / PIN Auth State
@@ -38,45 +47,61 @@ export default function EditorPage() {
   const [generatedGuests, setGeneratedGuests] = useState<BulkGuest[]>([]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    // Detect origin
+    if (typeof window !== "undefined") {
+      setDomainUrl(window.location.origin);
+    }
+
+    // LocalStorage fallback cache
+    try {
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
-        try {
-          const parsed = JSON.parse(savedData);
-          setData({
-            ...defaultWedding,
-            ...parsed,
-            events: parsed.events || defaultWedding.events,
-            bankAccounts: parsed.bankAccounts || defaultWedding.bankAccounts,
-            gallery: parsed.gallery || defaultWedding.gallery,
-            giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
-          });
-        } catch (e) {
-          console.warn(e);
-        }
+        const parsed = JSON.parse(savedData);
+        setData({
+          ...defaultWedding,
+          ...parsed,
+          events: parsed.events || defaultWedding.events,
+          bankAccounts: parsed.bankAccounts || defaultWedding.bankAccounts,
+          gallery: parsed.gallery || defaultWedding.gallery,
+          giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
+        });
       }
+    } catch (e) {
+      console.warn(e);
+    }
 
-      const savedRsvps = localStorage.getItem(RSVP_STORAGE_KEY);
-      if (savedRsvps) {
-        try { setRsvps(JSON.parse(savedRsvps)); } catch (e) { console.warn(e); }
+    // Realtime Firebase Subscriptions
+    const unsubWedding = subscribeWeddingData((fbData) => {
+      if (fbData) {
+        setData({
+          ...defaultWedding,
+          ...fbData,
+          events: fbData.events || defaultWedding.events,
+          bankAccounts: fbData.bankAccounts || defaultWedding.bankAccounts,
+          gallery: fbData.gallery || defaultWedding.gallery,
+          giftAddress: fbData.giftAddress || defaultWedding.giftAddress,
+        });
       }
+    });
 
-      const savedWishes = localStorage.getItem(WISHES_STORAGE_KEY);
-      if (savedWishes) {
-        try { setWishes(JSON.parse(savedWishes)); } catch (e) { console.warn(e); }
-      }
+    const unsubRSVPs = subscribeRSVPs((fbRsvps) => {
+      if (fbRsvps) setRsvps(fbRsvps);
+    });
 
-      // Detect current origin for domain URL
-      if (typeof window !== "undefined") {
-        setDomainUrl(window.location.origin);
-      }
+    const unsubWishes = subscribeWishes((fbWishes) => {
+      if (fbWishes) setWishes(fbWishes);
+    });
 
-      const auth = sessionStorage.getItem("ruang-temu-auth");
-      if (auth === "true") {
-        setIsAuthorized(true);
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
+    const auth = sessionStorage.getItem("ruang-temu-auth");
+    if (auth === "true") {
+      setIsAuthorized(true);
+    }
+
+    return () => {
+      unsubWedding();
+      unsubRSVPs();
+      unsubWishes();
+    };
   }, []);
 
   const showToast = (msg: string) => {
@@ -105,11 +130,20 @@ export default function EditorPage() {
   const patch = (key: keyof WeddingData, value: WeddingData[keyof WeddingData]) =>
     setData((d) => ({ ...d, [key]: value }));
 
-  const save = () => {
+  const save = async () => {
+    setSavingLoading(true);
+    // Save to Firebase Realtime Database
+    const success = await saveWeddingDataToFirebase(data);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(wishes));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSavingLoading(false);
+
+    if (success) {
+      setSaved(true);
+      showToast("Tersimpan di Cloud Firebase! Semua HP & Perangkat otomatis ter-update.");
+      setTimeout(() => setSaved(false), 2500);
+    } else {
+      showToast("Gagal menyimpan ke Firebase. Cek koneksi internet.");
+    }
   };
 
   const upload = (file: File, index?: number) => {
@@ -170,12 +204,12 @@ export default function EditorPage() {
   const copyAllLinks = () => {
     if (generatedGuests.length === 0) return;
     const text = generatedGuests.map((g) => `${g.name}: ${g.url}`).join("\n");
-    navigator.clipboard.writeText(text);
+    if (navigator?.clipboard) navigator.clipboard.writeText(text);
     showToast("Semua tautan berhasil disalin ke clipboard!");
   };
 
   const copySingleText = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+    if (navigator?.clipboard) navigator.clipboard.writeText(text);
     showToast(`${label} disalin!`);
   };
 
@@ -218,16 +252,14 @@ export default function EditorPage() {
     );
   };
 
-  const deleteWish = (id: string) => {
-    const updated = wishes.filter((w) => w.id !== id);
-    setWishes(updated);
-    localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(updated));
+  const handleDeleteWish = async (id: string) => {
+    await deleteWishFromFirebase(id);
+    showToast("Ucapan berhasil dihapus dari Firebase.");
   };
 
-  const deleteRSVP = (id: string) => {
-    const updated = rsvps.filter((r) => r.id !== id);
-    setRsvps(updated);
-    localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(updated));
+  const handleDeleteRSVP = async (id: string) => {
+    await deleteRSVPFromFirebase(id);
+    showToast("RSVP berhasil dihapus dari Firebase.");
   };
 
   const totalAttending = rsvps
@@ -301,7 +333,6 @@ export default function EditorPage() {
                 outline: "none",
               }}
               required
-              autoFocus
             />
 
             {pinError && (
@@ -333,9 +364,9 @@ export default function EditorPage() {
           <span>RT</span> Ruang Temu
         </Link>
         <div>
-          <p>ADMIN CONTROL PANEL</p>
+          <p style={{ color: "#77ffbb", fontWeight: "bold" }}>🔥 FIREBASE REALTIME DB CONNECTED</p>
           <h1>Manajer Undangan</h1>
-          <span>Perubahan tersimpan di browser ini. Dilengkapi Generator Undangan Masal.</span>
+          <span>Semua edit otomatis tersinkronisasi ke seluruh HP &amp; perangkat tamu secara live.</span>
         </div>
         <nav>
           <a href="#masal">⚡ Generator Undangan Masal</a>
@@ -368,13 +399,13 @@ export default function EditorPage() {
       <section className="editor-main">
         <div className="editor-top">
           <div>
-            <p className="eyebrow">WEDDING CONTENT MANAGER</p>
-            <h2>Pengaturan Undangan &amp; Bulk Generator</h2>
+            <p className="eyebrow">WEDDING CONTENT MANAGER • REALTIME FIREBASE SYNC</p>
+            <h2>Pengaturan Undangan Cloud Protected</h2>
           </div>
           <div className="editor-actions">
             <button onClick={exportData}>💾 Ekspor Data JSON</button>
-            <button className="save-button" onClick={save}>
-              {saved ? "Tersimpan ✓" : "Simpan Perubahan"}
+            <button className="save-button" onClick={save} disabled={savingLoading}>
+              {savingLoading ? "Menyimpan ke Cloud..." : saved ? "Tersimpan di Cloud 🔥" : "🔥 Simpan Perubahan ke Firebase"}
             </button>
           </div>
         </div>
@@ -808,7 +839,7 @@ export default function EditorPage() {
           <div className="form-title">
             <span>07</span>
             <div>
-              <h3>Daftar Konfirmasi Kehadiran (RSVP)</h3>
+              <h3>Daftar Konfirmasi Kehadiran (RSVP) Realtime</h3>
               <p>Total Tamu Terkonfirmasi Hadir: <strong>{totalAttending} Orang</strong></p>
             </div>
           </div>
@@ -839,7 +870,7 @@ export default function EditorPage() {
                     <td>{r.message || "-"}</td>
                     <td>{r.timestamp}</td>
                     <td>
-                      <button onClick={() => deleteRSVP(r.id)} style={{ color: "#9b2c2c" }}>Hapus</button>
+                      <button onClick={() => handleDeleteRSVP(r.id)} style={{ color: "#9b2c2c" }}>Hapus</button>
                     </td>
                   </tr>
                 ))}
@@ -853,7 +884,7 @@ export default function EditorPage() {
           <div className="form-title">
             <span>08</span>
             <div>
-              <h3>Buku Tamu / Doa &amp; Ucapan ({wishes.length})</h3>
+              <h3>Buku Tamu / Doa &amp; Ucapan ({wishes.length}) Realtime</h3>
               <p>Semua doa restu dan ucapan hangat dari sahabat &amp; keluarga.</p>
             </div>
           </div>
@@ -878,7 +909,7 @@ export default function EditorPage() {
                     <td>“{w.message}”</td>
                     <td>{w.timestamp}</td>
                     <td>
-                      <button onClick={() => deleteWish(w.id)} style={{ color: "#9b2c2c" }}>Hapus</button>
+                      <button onClick={() => handleDeleteWish(w.id)} style={{ color: "#9b2c2c" }}>Hapus</button>
                     </td>
                   </tr>
                 ))}

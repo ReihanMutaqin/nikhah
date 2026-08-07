@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultWedding, defaultWishes, type RSVPItem, type WeddingData, type WishItem } from "./wedding-data";
+import { subscribeWeddingData, subscribeWishes, addWishToFirebase, addRSVPToFirebase } from "./firebase";
 
 export const STORAGE_KEY = "ruang-temu-wedding-data";
 export const RSVP_STORAGE_KEY = "ruang-temu-rsvp-list";
@@ -99,39 +100,52 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const bankList = data?.bankAccounts?.length ? data.bankAccounts : defaultWedding.bankAccounts;
   const giftAddressInfo = data?.giftAddress || defaultWedding.giftAddress;
 
-  // Load custom data & wishes safely from localStorage
+  // 1. Subscribe to Firebase Realtime Database for global cross-device sync
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        const savedData = localStorage.getItem(STORAGE_KEY);
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          setData({
-            ...defaultWedding,
-            ...parsed,
-            events: parsed.events || defaultWedding.events,
-            bankAccounts: parsed.bankAccounts || defaultWedding.bankAccounts,
-            gallery: parsed.gallery || defaultWedding.gallery,
-            giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
-          });
-        }
-      } catch (e) {
-        console.warn("Failed to load saved wedding data", e);
+    // LocalStorage fallback cache
+    try {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setData({
+          ...defaultWedding,
+          ...parsed,
+          events: parsed.events || defaultWedding.events,
+          bankAccounts: parsed.bankAccounts || defaultWedding.bankAccounts,
+          gallery: parsed.gallery || defaultWedding.gallery,
+          giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
+        });
       }
+    } catch (e) {
+      console.warn("LocalStorage load error", e);
+    }
 
-      try {
-        const savedWishes = localStorage.getItem(WISHES_STORAGE_KEY);
-        if (savedWishes) {
-          const parsedWishes = JSON.parse(savedWishes);
-          if (Array.isArray(parsedWishes) && parsedWishes.length > 0) {
-            setWishes(parsedWishes);
-          }
-        }
-      } catch (e) {
-        console.warn("Failed to load saved wishes", e);
+    // Subscribe to Realtime Firebase updates
+    const unsubscribeWedding = subscribeWeddingData((fbData) => {
+      if (fbData) {
+        setData({
+          ...defaultWedding,
+          ...fbData,
+          events: fbData.events || defaultWedding.events,
+          bankAccounts: fbData.bankAccounts || defaultWedding.bankAccounts,
+          gallery: fbData.gallery || defaultWedding.gallery,
+          giftAddress: fbData.giftAddress || defaultWedding.giftAddress,
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(fbData));
       }
-    }, 0);
-    return () => window.clearTimeout(timer);
+    });
+
+    const unsubscribeWishes = subscribeWishes((fbWishes) => {
+      if (fbWishes && fbWishes.length > 0) {
+        setWishes(fbWishes);
+        localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(fbWishes));
+      }
+    });
+
+    return () => {
+      unsubscribeWedding();
+      unsubscribeWishes();
+    };
   }, []);
 
   // Countdown Timer Logic
@@ -192,8 +206,8 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     }
   };
 
-  // Submit RSVP
-  const handleRSVPSubmit = (e: React.FormEvent) => {
+  // Submit RSVP to Firebase
+  const handleRSVPSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newRSVP: RSVPItem = {
       id: "rsvp-" + Date.now(),
@@ -204,19 +218,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       timestamp: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
     };
 
-    try {
-      const existing: RSVPItem[] = JSON.parse(localStorage.getItem(RSVP_STORAGE_KEY) || "[]");
-      const updated = [newRSVP, ...existing];
-      localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Failed to save RSVP", e);
-    }
+    await addRSVPToFirebase(newRSVP);
     setRsvpSubmitted(true);
     showToast("Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.");
   };
 
-  // Submit Wish
-  const handleWishSubmit = (e: React.FormEvent) => {
+  // Submit Wish to Firebase
+  const handleWishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wishForm.name || !wishForm.message) return;
 
@@ -225,16 +233,10 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       name: wishForm.name,
       relation: wishForm.relation,
       message: wishForm.message,
-      timestamp: "Baru saja",
+      timestamp: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
     };
 
-    const updated = [newWish, ...(wishes || [])];
-    setWishes(updated);
-    try {
-      localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Failed to save wish", e);
-    }
+    await addWishToFirebase(newWish);
     setWishForm({ name: "", relation: "Sahabat", message: "" });
     showToast("Doa & ucapan Anda berhasil dikirim!");
   };
