@@ -143,6 +143,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const [checkIns, setCheckIns] = useState<CheckInItem[]>([]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
 
   // Audio / Music Player State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -227,8 +228,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           gallery: parsed.gallery || defaultWedding.gallery,
           giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
         });
+        setIsLoading(false);
       }
     } catch (e) {}
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
 
     const unsubscribeWedding = subscribeWeddingData((fbData) => {
       if (fbData) {
@@ -241,6 +247,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           giftAddress: fbData.giftAddress || defaultWedding.giftAddress,
         });
       }
+      setIsLoading(false);
     });
 
     const unsubscribeWishes = subscribeWishes((fbWishes) => {
@@ -256,6 +263,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     });
 
     return () => {
+      clearTimeout(timer);
       unsubscribeWedding();
       unsubscribeWishes();
       unsubscribeCheckIns();
@@ -374,6 +382,35 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     setWishForm({ name: "", relation: "Sahabat", message: "" });
     showToast("Doa & ucapan Anda berhasil dikirim!");
   };
+
+  // Fullscreen Monogram Loading Screen while fetching initial Firebase data
+  if (isLoading) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          background: "var(--forest)",
+          color: "white",
+          display: "grid",
+          placeItems: "center",
+          textAlign: "center",
+          padding: "20px",
+        }}
+      >
+        <div className="animated-fade-in" style={{ display: "grid", gap: "16px", justifyItems: "center" }}>
+          <div className="monogram" style={{ animation: "bloomPulse 2s ease-in-out infinite", margin: 0 }}>
+            {brideInitial} <i>&amp;</i> {groomInitial}
+          </div>
+          <p style={{ font: "500 1.4rem 'Playfair Display', serif", margin: "10px 0 0", color: "var(--gold-light)" }}>
+            Mempersiapkan Undangan...
+          </p>
+          <span style={{ fontSize: "0.72rem", opacity: 0.7, letterSpacing: "0.15em" }}>
+            MEMUAT DATA CLOUD FIREBASE
+          </span>
+        </div>
+      </main>
+    );
+  }
 
   // Covered View (Opening Envelope)
   if (!opened) {
