@@ -33,71 +33,117 @@ function getGoogleCalendarUrl(title: string, details: string, location: string, 
   )}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}&dates=${start}/${end}`;
 }
 
-// Lush Floral Corner Vector SVG
+// ═══════════════════════════════════════════════════════════════════
+// LUSH BOTANICAL GARDEN VECTOR COLLECTION (Inspired by Viding #183)
+// Pink Hibiscus, Vine Branches, Butterflies, Golden Frames, Peacock
+// ═══════════════════════════════════════════════════════════════════
+
+// Large Pink Hibiscus Flower Cluster (Corner Decoration)
 function FloralCornerOrnament({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
   return (
     <div className={`floral-corner floral-corner-${position}`}>
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M10 10C35 10 75 25 90 60C100 85 105 110 110 120"
-          stroke="#c5a059"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M10 10C10 35 25 75 60 90C85 100 110 105 120 110"
-          stroke="#c5a059"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          opacity="0.7"
-        />
-        <circle cx="35" cy="35" r="12" fill="#c5a059" opacity="0.25" />
-        <path d="M35 15C38 25 45 32 55 35C45 38 38 45 35 55C32 45 25 38 15 35C25 32 32 25 35 15Z" fill="#c5a059" />
-        <circle cx="35" cy="35" r="5" fill="#ffffff" />
-        <path d="M60 25C70 15 85 20 80 35C70 35 60 30 60 25Z" fill="#7e9b8c" />
-        <path d="M25 60C15 70 20 85 35 80C35 70 30 60 25 60Z" fill="#7e9b8c" />
-        <path d="M80 50C92 42 102 52 94 64C82 60 78 52 80 50Z" fill="#c5a059" opacity="0.85" />
-        <path d="M50 80C42 92 52 102 64 94C60 82 52 78 50 80Z" fill="#c5a059" opacity="0.85" />
+      <svg viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Main vine branch */}
+        <path d="M5 5C30 15 55 35 75 65C90 90 100 120 110 155C115 170 118 178 120 180" stroke="#5a7a4a" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M5 5C15 30 35 55 65 75C90 90 120 100 155 110" stroke="#5a7a4a" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+        {/* Secondary vine */}
+        <path d="M15 8C25 20 40 38 50 55C58 68 62 78 68 95" stroke="#6d8c5a" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        {/* Large pink hibiscus flower 1 */}
+        <circle cx="42" cy="42" r="22" fill="#f0a0b0" opacity="0.3" />
+        <path d="M42 16C48 28 55 35 62 38C55 44 48 55 42 68C36 55 29 44 22 38C29 35 36 28 42 16Z" fill="#e87da0" />
+        <path d="M26 26C34 22 38 28 36 36C28 36 24 32 26 26Z" fill="#f5b8c8" />
+        <path d="M58 26C50 22 46 28 48 36C56 36 60 32 58 26Z" fill="#f5b8c8" />
+        <path d="M26 58C34 62 38 56 36 48C28 48 24 52 26 58Z" fill="#f5b8c8" />
+        <path d="M58 58C50 62 46 56 48 48C56 48 60 52 58 58Z" fill="#f5b8c8" />
+        <circle cx="42" cy="42" r="7" fill="#fce4ec" />
+        <circle cx="42" cy="42" r="3" fill="#c2185b" opacity="0.6" />
+        {/* Small pink bud 2 */}
+        <path d="M85 35C92 28 100 32 96 42C88 40 84 37 85 35Z" fill="#e87da0" />
+        <path d="M82 42C76 34 80 26 90 30C88 38 85 42 82 42Z" fill="#7cb342" />
+        {/* Green leaves along vine */}
+        <path d="M25 70C18 80 22 92 35 88C34 78 30 72 25 70Z" fill="#66bb6a" opacity="0.8" />
+        <path d="M70 25C80 18 92 22 88 35C78 34 72 30 70 25Z" fill="#66bb6a" opacity="0.8" />
+        <path d="M55 85C48 95 52 107 65 103C64 93 60 87 55 85Z" fill="#4caf50" opacity="0.7" />
+        <path d="M95 55C105 48 117 52 113 65C103 64 97 60 95 55Z" fill="#4caf50" opacity="0.7" />
+        {/* Small berries */}
+        <circle cx="78" cy="68" r="3" fill="#ffb74d" />
+        <circle cx="68" cy="78" r="2.5" fill="#ffb74d" />
+        <circle cx="88" cy="48" r="2" fill="#ef5350" opacity="0.7" />
+        {/* Tiny flower bud 3 */}
+        <path d="M110 75C118 68 128 72 124 84C114 82 110 78 110 75Z" fill="#f48fb1" opacity="0.8" />
+        <circle cx="115" cy="78" r="3" fill="#fce4ec" />
+        {/* Second large hibiscus */}
+        <circle cx="90" cy="110" r="18" fill="#f0a0b0" opacity="0.2" />
+        <path d="M90 90C94 100 100 106 108 108C100 112 94 120 90 130C86 120 80 112 72 108C80 106 86 100 90 90Z" fill="#ec407a" opacity="0.85" />
+        <circle cx="90" cy="110" r="5" fill="#fce4ec" />
+        <circle cx="90" cy="110" r="2" fill="#c2185b" opacity="0.5" />
       </svg>
     </div>
   );
 }
 
-// Blooming Floral Header Divider SVG
+// Ornate Golden Botanical Divider with Flowers
 function BotanicalDivider() {
   return (
     <div className="floral-divider-container">
-      <svg className="floral-divider-svg" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 20H100" stroke="#c5a059" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-        <path d="M180 20H270" stroke="#c5a059" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-        <circle cx="140" cy="20" r="14" fill="#f6efe2" stroke="#c5a059" strokeWidth="1.5" />
-        <path d="M140 8C143 14 148 18 154 20C148 22 143 26 140 32C137 26 132 22 126 20C132 18 137 14 140 8Z" fill="#c5a059" />
-        <circle cx="140" cy="20" r="4" fill="#ffffff" />
-        <path d="M112 20C118 12 126 16 122 24C116 24 112 22 112 20Z" fill="#7e9b8c" />
-        <path d="M168 20C162 12 154 16 158 24C164 24 168 22 168 20Z" fill="#7e9b8c" />
-        <circle cx="85" cy="20" r="3" fill="#c5a059" />
-        <circle cx="195" cy="20" r="3" fill="#c5a059" />
-        <circle cx="65" cy="20" r="2" fill="#7e9b8c" />
-        <circle cx="215" cy="20" r="2" fill="#7e9b8c" />
+      <svg className="floral-divider-svg" viewBox="0 0 340 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Left vine line */}
+        <path d="M10 25C30 25 50 22 80 25C95 26 105 24 120 25" stroke="#5a7a4a" strokeWidth="1.5" strokeLinecap="round" />
+        {/* Right vine line */}
+        <path d="M220 25C235 24 245 26 260 25C290 22 310 25 330 25" stroke="#5a7a4a" strokeWidth="1.5" strokeLinecap="round" />
+        {/* Left leaves */}
+        <path d="M40 22C36 16 28 18 32 26C38 26 42 24 40 22Z" fill="#66bb6a" />
+        <path d="M70 28C66 34 58 32 62 24C68 24 72 26 70 28Z" fill="#4caf50" />
+        {/* Right leaves */}
+        <path d="M270 28C274 34 282 32 278 24C272 24 268 26 270 28Z" fill="#4caf50" />
+        <path d="M300 22C304 16 312 18 308 26C302 26 298 24 300 22Z" fill="#66bb6a" />
+        {/* Center ornate golden frame */}
+        <ellipse cx="170" cy="25" rx="28" ry="22" fill="#f6efe2" stroke="#c5a059" strokeWidth="2" />
+        {/* Center hibiscus flower */}
+        <path d="M170 8C174 16 178 20 184 22C178 26 174 32 170 42C166 32 162 26 156 22C162 20 166 16 170 8Z" fill="#e87da0" />
+        <circle cx="170" cy="22" r="5" fill="#fce4ec" />
+        <circle cx="170" cy="22" r="2" fill="#c2185b" opacity="0.5" />
+        {/* Small bud left */}
+        <path d="M142 25C146 18 152 22 148 28C144 28 142 27 142 25Z" fill="#f48fb1" opacity="0.7" />
+        {/* Small bud right */}
+        <path d="M198 25C194 18 188 22 192 28C196 28 198 27 198 25Z" fill="#f48fb1" opacity="0.7" />
+        {/* Golden dots */}
+        <circle cx="100" cy="25" r="3" fill="#c5a059" />
+        <circle cx="240" cy="25" r="3" fill="#c5a059" />
+        <circle cx="55" cy="25" r="2" fill="#c5a059" opacity="0.5" />
+        <circle cx="285" cy="25" r="2" fill="#c5a059" opacity="0.5" />
+        {/* Tiny berries */}
+        <circle cx="85" cy="20" r="2" fill="#ffb74d" />
+        <circle cx="255" cy="20" r="2" fill="#ffb74d" />
       </svg>
     </div>
   );
 }
 
-// Cute 3D Wax Seal Stamp Vector Badge
+// 3D Wax Seal Stamp with Floral Wreath
 function WaxSealBadgeSVG() {
   return (
-    <svg className="wax-seal-badge" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="44" fill="#9e7d3b" />
-      <circle cx="50" cy="50" r="40" fill="#c5a059" />
-      <circle cx="50" cy="50" r="34" stroke="#f6efe2" strokeWidth="2" strokeDasharray="4 3" opacity="0.8" />
-      <path d="M50 24C52 34 60 42 70 45C60 48 52 56 50 66C48 56 40 48 30 45C40 42 48 34 50 24Z" fill="#f6efe2" />
-      <circle cx="50" cy="45" r="5" fill="#9e7d3b" />
+    <svg className="wax-seal-badge" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Outer seal ring */}
+      <circle cx="60" cy="60" r="54" fill="#8b6914" />
+      <circle cx="60" cy="60" r="50" fill="#c5a059" />
+      <circle cx="60" cy="60" r="46" fill="#d4b06a" />
+      {/* Decorative border */}
+      <circle cx="60" cy="60" r="42" stroke="#f6efe2" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.7" />
+      {/* Small floral wreath around center */}
+      <path d="M40 30C44 24 50 28 46 34C42 34 40 32 40 30Z" fill="#f48fb1" opacity="0.6" />
+      <path d="M80 30C76 24 70 28 74 34C78 34 80 32 80 30Z" fill="#f48fb1" opacity="0.6" />
+      <path d="M40 90C44 96 50 92 46 86C42 86 40 88 40 90Z" fill="#66bb6a" opacity="0.5" />
+      <path d="M80 90C76 96 70 92 74 86C78 86 80 88 80 90Z" fill="#66bb6a" opacity="0.5" />
+      {/* Center embossed flower */}
+      <path d="M60 34C64 46 72 52 80 56C72 60 64 68 60 82C56 68 48 60 40 56C48 52 56 46 60 34Z" fill="#f6efe2" />
+      <circle cx="60" cy="56" r="7" fill="#d4b06a" />
+      <circle cx="60" cy="56" r="3" fill="#f6efe2" />
     </svg>
   );
 }
 
-// Torn Paper Edge Vector (Realistic Cutout Effect)
+// Torn Paper Edge (Realistic Cutout Effect)
 function TornPaperEdgeTopSVG({ color = "#fcfbf7" }: { color?: string }) {
   return (
     <svg className="torn-paper-edge-top" viewBox="0 0 1200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style={{ color }}>
@@ -106,34 +152,65 @@ function TornPaperEdgeTopSVG({ color = "#fcfbf7" }: { color?: string }) {
   );
 }
 
-// Cute Line-art Flower Doodle SVG
-function CuteDoodleFlowerSVG() {
+// Animated Butterfly SVG
+function ButterflySVG({ style }: { style?: React.CSSProperties }) {
   return (
-    <svg className="cute-doodle-flower" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="30" cy="30" r="10" fill="#c5a059" />
-      <path d="M30 8C35 16 35 20 30 20C25 20 25 16 30 8Z" fill="#7e9b8c" />
-      <path d="M30 52C35 44 35 40 30 40C25 40 25 44 30 52Z" fill="#7e9b8c" />
-      <path d="M8 30C16 35 20 35 20 30C20 25 16 25 8 30Z" fill="#7e9b8c" />
-      <path d="M52 30C44 35 40 35 40 30C40 25 44 25 52 30Z" fill="#7e9b8c" />
-      <circle cx="30" cy="30" r="4" fill="#ffffff" />
+    <svg style={style} className="cute-doodle-flower" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Left wing */}
+      <ellipse cx="18" cy="16" rx="14" ry="12" fill="#ce93d8" opacity="0.7" />
+      <ellipse cx="16" cy="28" rx="10" ry="8" fill="#ba68c8" opacity="0.6" />
+      <circle cx="18" cy="14" r="3" fill="#f3e5f5" opacity="0.8" />
+      {/* Right wing */}
+      <ellipse cx="42" cy="16" rx="14" ry="12" fill="#ce93d8" opacity="0.7" />
+      <ellipse cx="44" cy="28" rx="10" ry="8" fill="#ba68c8" opacity="0.6" />
+      <circle cx="42" cy="14" r="3" fill="#f3e5f5" opacity="0.8" />
+      {/* Body */}
+      <ellipse cx="30" cy="20" rx="2.5" ry="14" fill="#4a148c" opacity="0.7" />
+      {/* Antennae */}
+      <path d="M29 6C26 2 22 1 20 2" stroke="#4a148c" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+      <path d="M31 6C34 2 38 1 40 2" stroke="#4a148c" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+      <circle cx="20" cy="2" r="1.5" fill="#ce93d8" />
+      <circle cx="40" cy="2" r="1.5" fill="#ce93d8" />
     </svg>
   );
 }
 
-// Floating Animated Rose Petals Background
+// Vine Branch Horizontal SVG Separator
+function VineBranchSVG() {
+  return (
+    <div style={{ width: "100%", display: "flex", justifyContent: "center", margin: "10px 0" }}>
+      <svg viewBox="0 0 300 30" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "min(80%, 300px)", height: "auto" }}>
+        <path d="M10 15C50 15 80 10 120 15C140 18 160 12 180 15C220 20 250 15 290 15" stroke="#5a7a4a" strokeWidth="2" strokeLinecap="round" />
+        <path d="M40 14C36 8 28 10 32 18C38 18 42 16 40 14Z" fill="#66bb6a" />
+        <path d="M90 16C86 22 78 20 82 12C88 12 92 14 90 16Z" fill="#4caf50" />
+        <path d="M150 14C146 8 138 10 142 18C148 18 152 16 150 14Z" fill="#66bb6a" />
+        <path d="M210 16C206 22 198 20 202 12C208 12 212 14 210 16Z" fill="#4caf50" />
+        <path d="M260 14C256 8 248 10 252 18C258 18 262 16 260 14Z" fill="#66bb6a" />
+        <circle cx="65" cy="12" r="3" fill="#f48fb1" opacity="0.7" />
+        <circle cx="130" cy="18" r="2.5" fill="#ef5350" opacity="0.6" />
+        <circle cx="180" cy="12" r="3" fill="#f48fb1" opacity="0.7" />
+        <circle cx="240" cy="18" r="2.5" fill="#ffb74d" opacity="0.7" />
+      </svg>
+    </div>
+  );
+}
+
+// Floating Animated Rose Petals + Butterflies Background
 function FloatingPetals() {
-  const petals = [
-    { left: "8%", delay: "0s", duration: "11s" },
-    { left: "24%", delay: "3s", duration: "13s" },
-    { left: "42%", delay: "1s", duration: "10s" },
-    { left: "60%", delay: "4s", duration: "14s" },
-    { left: "76%", delay: "2s", duration: "12s" },
-    { left: "90%", delay: "5s", duration: "15s" },
+  const items = [
+    { left: "6%", delay: "0s", duration: "11s", type: "petal" },
+    { left: "20%", delay: "3s", duration: "13s", type: "petal" },
+    { left: "38%", delay: "1s", duration: "10s", type: "butterfly" },
+    { left: "55%", delay: "4s", duration: "14s", type: "petal" },
+    { left: "72%", delay: "2s", duration: "12s", type: "petal" },
+    { left: "88%", delay: "5s", duration: "15s", type: "butterfly" },
+    { left: "15%", delay: "6s", duration: "16s", type: "petal" },
+    { left: "65%", delay: "7s", duration: "12s", type: "petal" },
   ];
 
   return (
     <div className="falling-petals-container">
-      {petals.map((p, i) => (
+      {items.map((p, i) => (
         <div
           key={i}
           className="falling-petal"
@@ -141,6 +218,8 @@ function FloatingPetals() {
             left: p.left,
             animationDelay: p.delay,
             animationDuration: p.duration,
+            background: p.type === "butterfly" ? "transparent" : undefined,
+            borderRadius: p.type === "butterfly" ? "0" : undefined,
           }}
         />
       ))}
@@ -568,8 +647,12 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </div>
       </header>
 
+      {/* Vine Branch Separator */}
+      <VineBranchSVG />
+
       {/* Welcome & Mempelai Parents */}
-      <section className="welcome" id="mempelai">
+      <section className="welcome" id="mempelai" style={{ position: "relative" }}>
+        <ButterflySVG style={{ position: "absolute", top: "20px", right: "10%", width: "42px", opacity: 0.6 }} />
         <p className="eyebrow">DEAR, {guest.toUpperCase()}</p>
         <h2>
           Dengan penuh sukacita,
@@ -596,8 +679,12 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </div>
       </section>
 
+      {/* Vine Branch Separator */}
+      <VineBranchSVG />
+
       {/* Gallery Section (Positioned Elegantly after Mempelai) */}
-      <section className="gallery-section" id="galeri">
+      <section className="gallery-section" id="galeri" style={{ position: "relative" }}>
+        <ButterflySVG style={{ position: "absolute", top: "30px", left: "8%", width: "38px", opacity: 0.5, transform: "rotate(-15deg)" }} />
         <div className="section-head">
           <div>
             <p className="eyebrow">GALERI FOTO PRE-WEDDING</p>
@@ -632,8 +719,14 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </div>
       </section>
 
+      {/* Vine Branch Separator */}
+      <VineBranchSVG />
+
       {/* Holy Quote Block */}
-      <section className="quote-block">
+      <section className="quote-block" style={{ position: "relative" }}>
+        <ButterflySVG style={{ position: "absolute", top: "15px", right: "12%", width: "36px", opacity: 0.45, transform: "rotate(10deg)" }} />
+        <FloralCornerOrnament position="tl" />
+        <FloralCornerOrnament position="br" />
         <div className="monogram">
           {brideInitial} <i>&</i> {groomInitial}
         </div>
