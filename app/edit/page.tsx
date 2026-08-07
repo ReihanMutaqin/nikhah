@@ -159,6 +159,20 @@ export default function EditorPage() {
     reader.readAsDataURL(file);
   };
 
+  const uploadAudio = (file?: File) => {
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      showToast("File audio terlalu besar (maksimal 8MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      patch("musicUrl", String(reader.result));
+      showToast("Lagu MP3 berhasil diunggah! Klik Simpan ke Firebase.");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const exportData = () => {
     const fullData = { wedding: data, rsvps, wishes, bulkGuests: generatedGuests };
     const blob = new Blob([JSON.stringify(fullData, null, 2)], { type: "application/json" });
@@ -785,15 +799,38 @@ export default function EditorPage() {
           <div className="form-title">
             <span>05</span>
             <div>
-              <h3>Lagu Latar (Audio Background)</h3>
-              <p>Masukkan URL audio MP3 lagu pernikahan kesukaan pasangan.</p>
+              <h3>Lagu Latar (Audio Background &amp; Autoplay)</h3>
+              <p>Unggah file MP3 langsung dari perangkat Anda atau tempelkan URL lagu MP3.</p>
             </div>
           </div>
           <div className="form-grid">
             <label className="wide">
-              URL File Audio (.mp3)
-              <input value={data.musicUrl || ""} onChange={(e) => patch("musicUrl", e.target.value)} />
+              Unggah File MP3 Musik Pernikahan
+              <input
+                type="file"
+                accept="audio/mp3,audio/*"
+                onChange={(e) => uploadAudio(e.target.files?.[0])}
+                style={{ padding: "10px", background: "var(--sage-light)", borderRadius: "8px", cursor: "pointer" }}
+              />
             </label>
+
+            <label className="wide">
+              Atau Gunakan URL File Audio (.mp3)
+              <input
+                value={data.musicUrl || ""}
+                onChange={(e) => patch("musicUrl", e.target.value)}
+                placeholder="https://.../lagu.mp3"
+              />
+            </label>
+
+            {data.musicUrl && (
+              <div className="wide" style={{ marginTop: "10px" }}>
+                <p style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--forest)", marginBottom: "6px" }}>
+                  🔊 Tes Pemutar Lagu:
+                </p>
+                <audio controls src={data.musicUrl} style={{ width: "100%", borderRadius: "8px" }} />
+              </div>
+            )}
           </div>
         </div>
 

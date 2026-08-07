@@ -109,7 +109,6 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
   // 1. Subscribe to Firebase Realtime Database for global cross-device sync
   useEffect(() => {
-    // LocalStorage fallback cache
     try {
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
@@ -127,7 +126,6 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       console.warn("LocalStorage load error", e);
     }
 
-    // Subscribe to Realtime Firebase updates
     const unsubscribeWedding = subscribeWeddingData((fbData) => {
       if (fbData) {
         setData({
@@ -177,7 +175,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     return () => clearInterval(interval);
   }, [data?.countdownDate]);
 
-  // Audio Handler
+  // Audio Handler & Autoplay Logic
   const toggleMusic = () => {
     if (!audioRef.current) return;
     if (isPlaying) {
@@ -200,6 +198,29 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         .catch(() => setIsPlaying(false));
     }
   };
+
+  // Autoplay trigger on first touch/click/scroll anywhere on page
+  useEffect(() => {
+    if (!opened || isPlaying) return;
+    const handleFirstUserInteraction = () => {
+      if (audioRef.current && !isPlaying) {
+        audioRef.current
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener("click", handleFirstUserInteraction, { once: true });
+    window.addEventListener("touchstart", handleFirstUserInteraction, { once: true });
+    window.addEventListener("scroll", handleFirstUserInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("click", handleFirstUserInteraction);
+      window.removeEventListener("touchstart", handleFirstUserInteraction);
+      window.removeEventListener("scroll", handleFirstUserInteraction);
+    };
+  }, [opened, isPlaying]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -277,8 +298,8 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
   return (
     <main className="invitation">
-      {/* Background Audio */}
-      {data?.musicUrl && <audio ref={audioRef} src={data.musicUrl} loop />}
+      {/* Background Audio with Autoplay */}
+      {data?.musicUrl && <audio ref={audioRef} src={data.musicUrl} autoPlay loop />}
 
       {/* Floating Music Player Widget */}
       {data?.musicUrl && (
@@ -301,6 +322,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </Link>
         <div>
           <a href="#mempelai">Mempelai</a>
+          <a href="#galeri">Galeri</a>
           <a href="#acara">Acara</a>
           <a href="#rsvp">RSVP</a>
           <a href="#amplop">Amplop</a>
@@ -347,6 +369,29 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
             <h3>{groomName}</h3>
             <p>{data?.groomParents || defaultWedding.groomParents}</p>
           </div>
+        </div>
+      </section>
+
+      {/* Gallery Section (Moved right after Mempelai for standard elegant flow) */}
+      <section className="gallery-section" id="galeri">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">GALERI FOTO PRE-WEDDING</p>
+            <h2>
+              Dalam setiap bingkai,
+              <br />
+              <em>ada cerita.</em>
+            </h2>
+          </div>
+          <p>Potongan kecil dari perjalanan indah yang membawa kami sampai ke hari pernikahan ini.</p>
+        </div>
+
+        <div className="gallery-grid">
+          {galleryList.map((src, i) => (
+            <div className="gallery-item" key={`${src}-${i}`} onClick={() => setLightboxIndex(i)}>
+              <img src={src} alt={`Momen ${couple} ${i + 1}`} />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -621,29 +666,6 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           <div className="ticket-footer">
             Tamu: <strong>{guest}</strong>
           </div>
-        </div>
-      </section>
-
-      {/* Gallery Section */}
-      <section className="gallery-section" id="galeri">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">GALERI FOTO</p>
-            <h2>
-              Dalam setiap bingkai,
-              <br />
-              <em>ada cerita.</em>
-            </h2>
-          </div>
-          <p>Potongan kecil dari perjalanan indah yang membawa kami sampai ke hari pernikahan ini.</p>
-        </div>
-
-        <div className="gallery-grid">
-          {galleryList.map((src, i) => (
-            <div className="gallery-item" key={`${src}-${i}`} onClick={() => setLightboxIndex(i)}>
-              <img src={src} alt={`Momen ${couple} ${i + 1}`} />
-            </div>
-          ))}
         </div>
       </section>
 
