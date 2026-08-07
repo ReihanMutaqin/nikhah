@@ -33,17 +33,81 @@ function getGoogleCalendarUrl(title: string, details: string, location: string, 
   )}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}&dates=${start}/${end}`;
 }
 
-// Vector Botanical Divider Ornament
+// Lush Floral Corner Vector SVG
+function FloralCornerOrnament({ position }: { position: "tl" | "tr" | "bl" | "br" }) {
+  return (
+    <div className={`floral-corner floral-corner-${position}`}>
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M10 10C35 10 75 25 90 60C100 85 105 110 110 120"
+          stroke="#c5a059"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M10 10C10 35 25 75 60 90C85 100 110 105 120 110"
+          stroke="#c5a059"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.7"
+        />
+        <circle cx="35" cy="35" r="12" fill="#c5a059" opacity="0.25" />
+        <path d="M35 15C38 25 45 32 55 35C45 38 38 45 35 55C32 45 25 38 15 35C25 32 32 25 35 15Z" fill="#c5a059" />
+        <circle cx="35" cy="35" r="5" fill="#ffffff" />
+        <path d="M60 25C70 15 85 20 80 35C70 35 60 30 60 25Z" fill="#7e9b8c" />
+        <path d="M25 60C15 70 20 85 35 80C35 70 30 60 25 60Z" fill="#7e9b8c" />
+        <path d="M80 50C92 42 102 52 94 64C82 60 78 52 80 50Z" fill="#c5a059" opacity="0.85" />
+        <path d="M50 80C42 92 52 102 64 94C60 82 52 78 50 80Z" fill="#c5a059" opacity="0.85" />
+      </svg>
+    </div>
+  );
+}
+
+// Blooming Floral Header Divider SVG
 function BotanicalDivider() {
   return (
-    <div className="vector-divider animated-float">
-      <svg viewBox="0 0 140 24">
-        <path d="M10 12c15-8 35-8 60 0-25 8-45 8-60 0z" opacity="0.3" />
-        <path d="M130 12c-15-8-35-8-60 0 25 8 45 8 60 0z" opacity="0.3" />
-        <circle cx="70" cy="12" r="5" fill="#c5a059" />
-        <circle cx="54" cy="12" r="3" fill="#7e9b8c" />
-        <circle cx="86" cy="12" r="3" fill="#7e9b8c" />
+    <div className="floral-divider-container">
+      <svg className="floral-divider-svg" viewBox="0 0 280 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 20H100" stroke="#c5a059" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+        <path d="M180 20H270" stroke="#c5a059" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+        <circle cx="140" cy="20" r="14" fill="#f6efe2" stroke="#c5a059" strokeWidth="1.5" />
+        <path d="M140 8C143 14 148 18 154 20C148 22 143 26 140 32C137 26 132 22 126 20C132 18 137 14 140 8Z" fill="#c5a059" />
+        <circle cx="140" cy="20" r="4" fill="#ffffff" />
+        <path d="M112 20C118 12 126 16 122 24C116 24 112 22 112 20Z" fill="#7e9b8c" />
+        <path d="M168 20C162 12 154 16 158 24C164 24 168 22 168 20Z" fill="#7e9b8c" />
+        <circle cx="85" cy="20" r="3" fill="#c5a059" />
+        <circle cx="195" cy="20" r="3" fill="#c5a059" />
+        <circle cx="65" cy="20" r="2" fill="#7e9b8c" />
+        <circle cx="215" cy="20" r="2" fill="#7e9b8c" />
       </svg>
+    </div>
+  );
+}
+
+// Floating Animated Rose Petals Background
+function FloatingPetals() {
+  const petals = [
+    { left: "8%", delay: "0s", duration: "11s" },
+    { left: "24%", delay: "3s", duration: "13s" },
+    { left: "42%", delay: "1s", duration: "10s" },
+    { left: "60%", delay: "4s", duration: "14s" },
+    { left: "76%", delay: "2s", duration: "12s" },
+    { left: "90%", delay: "5s", duration: "15s" },
+  ];
+
+  return (
+    <div className="falling-petals-container">
+      {petals.map((p, i) => (
+        <div
+          key={i}
+          className="falling-petal"
+          style={{
+            left: p.left,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -320,6 +384,12 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           backgroundImage: `linear-gradient(180deg, rgba(16,28,24,.3), rgba(16,28,24,.78)), url('${data?.heroImage || defaultWedding.heroImage}')`,
         }}
       >
+        <FloralCornerOrnament position="tl" />
+        <FloralCornerOrnament position="tr" />
+        <FloralCornerOrnament position="bl" />
+        <FloralCornerOrnament position="br" />
+        <FloatingPetals />
+
         <div className="cover-inner animated-fade-in">
           <p>THE WEDDING OF</p>
           <h1>
@@ -339,7 +409,8 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   }
 
   return (
-    <main className="invitation">
+    <main className="invitation" style={{ position: "relative" }}>
+      <FloatingPetals />
       {/* Background Audio */}
       {data?.musicUrl && <audio ref={audioRef} src={data.musicUrl} autoPlay loop />}
 
