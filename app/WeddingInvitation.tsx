@@ -33,7 +33,7 @@ function getGoogleCalendarUrl(title: string, details: string, location: string, 
 
 // Generate simple SVG QR Code pattern
 function renderSimpleQrCode(text: string) {
-  const hash = Array.from(text).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hash = Array.from(text || "Tamu").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const size = 7;
   const rects = [];
   for (let r = 0; r < size; r++) {
@@ -87,19 +87,48 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const guest = useMemo(() => getGuest(slug || "tamu-undangan"), [slug]);
-  const couple = `${data.bride} & ${data.groom}`;
 
-  // Load custom data & wishes from localStorage
+  // Robust safe getters
+  const brideName = data?.bride || defaultWedding.bride;
+  const groomName = data?.groom || defaultWedding.groom;
+  const couple = `${brideName} & ${groomName}`;
+  const brideInitial = brideName ? brideName[0] : "A";
+  const groomInitial = groomName ? groomName[0] : "B";
+  const eventsList = data?.events?.length ? data.events : defaultWedding.events;
+  const galleryList = data?.gallery?.length ? data.gallery : defaultWedding.gallery;
+  const bankList = data?.bankAccounts?.length ? data.bankAccounts : defaultWedding.bankAccounts;
+  const giftAddressInfo = data?.giftAddress || defaultWedding.giftAddress;
+
+  // Load custom data & wishes safely from localStorage
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      if (savedData) {
-        try { setData(JSON.parse(savedData)); } catch (e) { console.warn("Failed to load saved wedding data", e); }
+      try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          setData({
+            ...defaultWedding,
+            ...parsed,
+            events: parsed.events || defaultWedding.events,
+            bankAccounts: parsed.bankAccounts || defaultWedding.bankAccounts,
+            gallery: parsed.gallery || defaultWedding.gallery,
+            giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
+          });
+        }
+      } catch (e) {
+        console.warn("Failed to load saved wedding data", e);
       }
 
-      const savedWishes = localStorage.getItem(WISHES_STORAGE_KEY);
-      if (savedWishes) {
-        try { setWishes(JSON.parse(savedWishes)); } catch (e) { console.warn("Failed to load saved wishes", e); }
+      try {
+        const savedWishes = localStorage.getItem(WISHES_STORAGE_KEY);
+        if (savedWishes) {
+          const parsedWishes = JSON.parse(savedWishes);
+          if (Array.isArray(parsedWishes) && parsedWishes.length > 0) {
+            setWishes(parsedWishes);
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load saved wishes", e);
       }
     }, 0);
     return () => window.clearTimeout(timer);
@@ -107,7 +136,9 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
   // Countdown Timer Logic
   useEffect(() => {
-    const targetDate = new Date(data.countdownDate || "2026-12-12T08:00:00").getTime();
+    const targetDateStr = data?.countdownDate || defaultWedding.countdownDate;
+    const targetDate = new Date(targetDateStr).getTime();
+
     const updateCountdown = () => {
       const now = new Date().getTime();
       const diff = Math.max(0, targetDate - now);
@@ -123,7 +154,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [data.countdownDate]);
+  }, [data?.countdownDate]);
 
   // Audio Handler
   const toggleMusic = () => {
@@ -141,7 +172,6 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
   const handleOpenInvitation = () => {
     setOpened(true);
-    // Auto-play music on invitation open if audio exists
     if (audioRef.current) {
       audioRef.current
         .play()
@@ -156,8 +186,10 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   };
 
   const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    showToast(`${label} berhasil disalin ke clipboard!`);
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(text);
+      showToast(`${label} berhasil disalin ke clipboard!`);
+    }
   };
 
   // Submit RSVP
@@ -172,9 +204,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       timestamp: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
     };
 
-    const existing: RSVPItem[] = JSON.parse(localStorage.getItem(RSVP_STORAGE_KEY) || "[]");
-    const updated = [newRSVP, ...existing];
-    localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(updated));
+    try {
+      const existing: RSVPItem[] = JSON.parse(localStorage.getItem(RSVP_STORAGE_KEY) || "[]");
+      const updated = [newRSVP, ...existing];
+      localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Failed to save RSVP", e);
+    }
     setRsvpSubmitted(true);
     showToast("Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.");
   };
@@ -192,9 +228,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       timestamp: "Baru saja",
     };
 
-    const updated = [newWish, ...wishes];
+    const updated = [newWish, ...(wishes || [])];
     setWishes(updated);
-    localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(updated));
+    try {
+      localStorage.setItem(WISHES_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Failed to save wish", e);
+    }
     setWishForm({ name: "", relation: "Sahabat", message: "" });
     showToast("Doa & ucapan Anda berhasil dikirim!");
   };
@@ -205,13 +245,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       <main
         className="cover"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgba(16,28,24,.3), rgba(16,28,24,.78)), url('${data.heroImage}')`,
+          backgroundImage: `linear-gradient(180deg, rgba(16,28,24,.3), rgba(16,28,24,.78)), url('${data?.heroImage || defaultWedding.heroImage}')`,
         }}
       >
         <div className="cover-inner">
           <p>THE WEDDING OF</p>
           <h1>
-            {data.bride} <i>&</i> {data.groom}
+            {brideName} <i>&</i> {groomName}
           </h1>
           <div className="guest-card">
             <small>Kepada Yth. Bapak/Ibu/Saudara/i</small>
@@ -229,10 +269,10 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   return (
     <main className="invitation">
       {/* Background Audio */}
-      {data.musicUrl && <audio ref={audioRef} src={data.musicUrl} loop />}
+      {data?.musicUrl && <audio ref={audioRef} src={data.musicUrl} loop />}
 
       {/* Floating Music Player Widget */}
-      {data.musicUrl && (
+      {data?.musicUrl && (
         <button className="music-player-widget" onClick={toggleMusic} title={isPlaying ? "Jeda Musik" : "Putar Musik"}>
           <div className={`vinyl-disc ${isPlaying ? "spinning" : ""}`} />
           <div className="music-info">
@@ -263,15 +303,15 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       <header
         className="invite-hero"
         style={{
-          backgroundImage: `linear-gradient(180deg, rgba(12,25,20,.15), rgba(12,25,20,.65)), url('${data.heroImage}')`,
+          backgroundImage: `linear-gradient(180deg, rgba(12,25,20,.15), rgba(12,25,20,.65)), url('${data?.heroImage || defaultWedding.heroImage}')`,
         }}
       >
         <div>
           <p>WE ARE GETTING MARRIED</p>
           <h1>
-            {data.bride} <i>&</i> {data.groom}
+            {brideName} <i>&</i> {groomName}
           </h1>
-          <span>{data.date}</span>
+          <span>{data?.date || defaultWedding.date}</span>
         </div>
       </header>
 
@@ -290,13 +330,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
 
         <div className="couple-parents-grid">
           <div className="couple-card">
-            <h3>{data.bride}</h3>
-            <p>{data.brideParents}</p>
+            <h3>{brideName}</h3>
+            <p>{data?.brideParents || defaultWedding.brideParents}</p>
           </div>
           <div className="couple-divider">&amp;</div>
           <div className="couple-card">
-            <h3>{data.groom}</h3>
-            <p>{data.groomParents}</p>
+            <h3>{groomName}</h3>
+            <p>{data?.groomParents || defaultWedding.groomParents}</p>
           </div>
         </div>
       </section>
@@ -304,10 +344,10 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       {/* Holy Quote Block */}
       <section className="quote-block">
         <div className="monogram">
-          {data.bride[0]} <i>&</i> {data.groom[0]}
+          {brideInitial} <i>&</i> {groomInitial}
         </div>
-        <blockquote>“{data.quote}”</blockquote>
-        <span>— {data.quoteSource}</span>
+        <blockquote>“{data?.quote || defaultWedding.quote}”</blockquote>
+        <span>— {data?.quoteSource || defaultWedding.quoteSource}</span>
       </section>
 
       {/* Story Section */}
@@ -320,7 +360,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
             <em>satu tujuan.</em>
           </h2>
         </div>
-        <p>{data.story}</p>
+        <p>{data?.story || defaultWedding.story}</p>
       </section>
 
       {/* Countdown Timer Section */}
@@ -350,11 +390,11 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       {/* Event Details & Add to Calendar */}
       <section className="event-section" id="acara">
         <p className="eyebrow">RANGKAIAN ACARA</p>
-        <h2>{data.dateLong}</h2>
+        <h2>{data?.dateLong || defaultWedding.dateLong}</h2>
 
         <div className="event-grid">
-          {data.events.map((ev, i) => (
-            <article key={ev.title + i}>
+          {eventsList.map((ev, i) => (
+            <article key={(ev?.title || "event") + i}>
               <span>✦</span>
               <h3>{ev.title}</h3>
               <b>{ev.time}</b>
@@ -477,8 +517,8 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </p>
 
         <div className="bank-cards-grid">
-          {data.bankAccounts.map((bank) => (
-            <div className="bank-card" key={bank.id}>
+          {bankList.map((bank) => (
+            <div className="bank-card" key={bank.id || bank.accountNumber}>
               <div className="bank-logo">{bank.logoText || bank.bank}</div>
               <div className="account-number">{bank.accountNumber}</div>
               <div className="account-holder">a.n. {bank.accountHolder}</div>
@@ -489,14 +529,14 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           ))}
         </div>
 
-        {data.giftAddress && (
+        {giftAddressInfo && (
           <div className="gift-address-card">
             <h4>📦 Pengiriman Kado Fisik</h4>
             <p>
-              <strong>Penerima:</strong> {data.giftAddress.recipient} ({data.giftAddress.phone})<br />
-              <strong>Alamat:</strong> {data.giftAddress.address}
+              <strong>Penerima:</strong> {giftAddressInfo.recipient} ({giftAddressInfo.phone})<br />
+              <strong>Alamat:</strong> {giftAddressInfo.address}
             </p>
-            <button className="copy-btn" onClick={() => handleCopy(data.giftAddress.address, "Alamat kado")}>
+            <button className="copy-btn" onClick={() => handleCopy(giftAddressInfo.address, "Alamat kado")}>
               📋 Salin Alamat Pengiriman
             </button>
           </div>
@@ -544,7 +584,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           </div>
 
           <div className="wishes-feed">
-            {wishes.map((w) => (
+            {(wishes || []).map((w) => (
               <div className="wish-card" key={w.id}>
                 <div className="wish-header">
                   <span className="wish-name">{w.name}</span>
@@ -590,7 +630,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         </div>
 
         <div className="gallery-grid">
-          {data.gallery.map((src, i) => (
+          {galleryList.map((src, i) => (
             <div className="gallery-item" key={`${src}-${i}`} onClick={() => setLightboxIndex(i)}>
               <img src={src} alt={`Momen ${couple} ${i + 1}`} />
             </div>
@@ -605,23 +645,23 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
             <button className="lightbox-close" onClick={() => setLightboxIndex(null)}>
               ✕
             </button>
-            <img src={data.gallery[lightboxIndex]} alt="Enlarged photo" />
+            <img src={galleryList[lightboxIndex] || galleryList[0]} alt="Enlarged photo" />
             <div className="lightbox-nav">
               <button
                 className="lightbox-btn"
                 onClick={() =>
-                  setLightboxIndex((prev) => (prev === null || prev === 0 ? data.gallery.length - 1 : prev - 1))
+                  setLightboxIndex((prev) => (prev === null || prev === 0 ? galleryList.length - 1 : prev - 1))
                 }
               >
                 ◀ Sebelum
               </button>
               <span>
-                {lightboxIndex + 1} / {data.gallery.length}
+                {lightboxIndex + 1} / {galleryList.length}
               </span>
               <button
                 className="lightbox-btn"
                 onClick={() =>
-                  setLightboxIndex((prev) => (prev === null || prev === data.gallery.length - 1 ? 0 : prev + 1))
+                  setLightboxIndex((prev) => (prev === null || prev === galleryList.length - 1 ? 0 : prev + 1))
                 }
               >
                 Sesudah ▶
@@ -635,9 +675,9 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       <section className="closing">
         <p>Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir.</p>
         <h2>
-          {data.bride} <i>&</i> {data.groom}
+          {brideName} <i>&</i> {groomName}
         </h2>
-        <span>{data.dateLong}</span>
+        <span>{data?.dateLong || defaultWedding.dateLong}</span>
       </section>
 
       {/* Footer */}

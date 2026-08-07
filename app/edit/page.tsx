@@ -40,11 +40,17 @@ export default function EditorPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const savedData = localStorage.getItem(STORAGE_KEY);
-      let loadedData = defaultWedding;
       if (savedData) {
         try {
-          loadedData = JSON.parse(savedData);
-          setData(loadedData);
+          const parsed = JSON.parse(savedData);
+          setData({
+            ...defaultWedding,
+            ...parsed,
+            events: parsed.events || defaultWedding.events,
+            bankAccounts: parsed.bankAccounts || defaultWedding.bankAccounts,
+            gallery: parsed.gallery || defaultWedding.gallery,
+            giftAddress: parsed.giftAddress || defaultWedding.giftAddress,
+          });
         } catch (e) {
           console.warn(e);
         }
