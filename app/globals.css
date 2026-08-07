@@ -17,15 +17,21 @@
   --shadow-lg: 0 25px 60px rgba(18, 40, 32, 0.14);
 }
 
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
   margin: 0;
+  padding: 0;
   background: var(--paper);
   color: var(--ink);
   font-family: 'DM Sans', sans-serif;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -137,6 +143,8 @@ button { cursor: pointer; border: none; background: none; }
 
 /* INVITATION COVER & HERO */
 .cover {
+  width: 100%;
+  max-width: 100vw;
   min-height: 100svh;
   background-size: cover;
   background-position: center;
@@ -145,6 +153,8 @@ button { cursor: pointer; border: none; background: none; }
   color: white;
   text-align: center;
   position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .cover::before {
   content: '';
@@ -157,9 +167,14 @@ button { cursor: pointer; border: none; background: none; }
   z-index: 2;
   width: min(94%, 620px);
   padding: 40px 24px;
+  box-sizing: border-box;
 }
 .cover-inner > p { letter-spacing: 0.3em; font-size: 0.72rem; margin-bottom: 8px; }
-.cover h1, .invite-hero h1 { font: 500 clamp(3.6rem, 9vw, 6.5rem)/1 'Playfair Display', serif; margin: 18px 0; }
+.cover h1, .invite-hero h1 {
+  font: 500 clamp(2.8rem, 8vw, 6.5rem)/1 'Playfair Display', serif;
+  margin: 18px 0;
+  word-break: break-word;
+}
 .cover h1 i, .invite-hero h1 i, .closing h2 i { color: var(--gold); font-weight: 400; }
 .guest-card {
   margin: 36px auto 30px;
@@ -172,34 +187,51 @@ button { cursor: pointer; border: none; background: none; }
   display: grid;
   gap: 8px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
 }
 .guest-card small { font-size: 0.76rem; opacity: 0.9; letter-spacing: 0.1em; }
-.guest-card strong { font: 500 1.6rem 'Playfair Display', serif; color: #ffffff; }
+.guest-card strong { font: 500 1.6rem 'Playfair Display', serif; color: #ffffff; word-break: break-word; }
 .guest-card span { font-size: 0.68rem; opacity: 0.78; }
 
 .button.light { background: white; color: var(--forest); font-weight: 600; margin: auto; padding: 16px 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 .button.light:hover { background: var(--gold-light); transform: scale(1.03); }
 
+/* TOP NAVBAR & MOBILE RESPONSIVENESS */
 .invite-nav {
   position: fixed;
   z-index: 50;
   top: 0; left: 0; right: 0;
-  height: 70px;
+  height: 64px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 5vw;
-  background: rgba(16, 32, 25, 0.82);
+  padding: 0 24px;
+  background: rgba(16, 32, 25, 0.88);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   transition: all 0.3s ease;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
-.invite-nav > div { display: flex; gap: 24px; font-size: 0.84rem; letter-spacing: 0.04em; }
+.invite-nav .nav-desktop-links {
+  display: flex;
+  gap: 24px;
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+}
 .invite-nav a:hover { color: var(--gold); }
 .invite-nav .brand span { border-color: white; color: var(--forest); background: white; }
 
+/* MOBILE BOTTOM NAVIGATION BAR */
+.mobile-bottom-nav {
+  display: none;
+}
+
 .invite-hero {
+  width: 100%;
+  max-width: 100vw;
   height: min(850px, 100svh);
   background-size: cover;
   background-position: center;
@@ -207,8 +239,10 @@ button { cursor: pointer; border: none; background: none; }
   place-items: end center;
   text-align: center;
   color: white;
-  padding: 90px 30px 60px;
+  padding: 90px 24px 60px;
   position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .invite-hero::before {
   content: '';
@@ -216,18 +250,19 @@ button { cursor: pointer; border: none; background: none; }
   inset: 0;
   background: linear-gradient(180deg, rgba(12,25,20,0.15) 0%, rgba(12,25,20,0.72) 100%);
 }
-.invite-hero > div { position: relative; z-index: 2; }
+.invite-hero > div { position: relative; z-index: 2; width: 100%; }
 .invite-hero p { font-size: 0.7rem; letter-spacing: 0.3em; margin-bottom: 10px; }
 .invite-hero span { letter-spacing: 0.28em; font-size: 0.85rem; color: var(--gold-light); }
 
 .welcome {
   text-align: center;
-  padding: 110px 25px 90px;
+  padding: 100px 24px 80px;
   max-width: 880px;
   margin: auto;
   position: relative;
+  box-sizing: border-box;
 }
-.welcome h2, .event-section > h2, .section-title { font: 500 clamp(2.4rem, 5.5vw, 4.5rem)/1.15 'Playfair Display', serif; }
+.welcome h2, .event-section > h2, .section-title { font: 500 clamp(2.2rem, 5.5vw, 4.5rem)/1.15 'Playfair Display', serif; }
 .welcome > p:last-child { max-width: 620px; margin: 25px auto 0; color: #6f7c75; line-height: 1.8; font-size: 1.02rem; }
 
 /* Couple Parents Section */
@@ -239,6 +274,7 @@ button { cursor: pointer; border: none; background: none; }
   max-width: 900px;
   margin: 50px auto 0;
   padding: 0 20px;
+  box-sizing: border-box;
 }
 .couple-card {
   background: white;
@@ -262,9 +298,10 @@ button { cursor: pointer; border: none; background: none; }
   background: var(--forest);
   color: white;
   text-align: center;
-  padding: 100px 25px;
+  padding: 100px 24px;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 .monogram {
   font: 500 2.6rem 'Playfair Display', serif;
@@ -277,7 +314,7 @@ button { cursor: pointer; border: none; background: none; }
 }
 .monogram i { color: var(--gold); font-style: italic; }
 .quote-block blockquote {
-  font: 500 clamp(1.4rem, 2.8vw, 2.2rem)/1.5 'Playfair Display', serif;
+  font: 500 clamp(1.3rem, 2.8vw, 2.2rem)/1.5 'Playfair Display', serif;
   max-width: 850px;
   margin: 0 auto 20px;
   color: #f1f5f3;
@@ -291,10 +328,11 @@ button { cursor: pointer; border: none; background: none; }
   gap: 80px;
   max-width: 1100px;
   margin: auto;
-  padding: 130px 30px;
+  padding: 110px 24px;
   align-items: center;
+  box-sizing: border-box;
 }
-.story-section h2, .section-head h2 { font: 500 clamp(2.6rem, 4.8vw, 4.5rem)/1 'Playfair Display', serif; }
+.story-section h2, .section-head h2 { font: 500 clamp(2.4rem, 4.8vw, 4.5rem)/1 'Playfair Display', serif; }
 .story-section h2 em, .section-head h2 em { color: #577868; font-style: italic; }
 .story-section > p { color: #697a71; line-height: 2; font-size: 1.03rem; }
 
@@ -303,12 +341,13 @@ button { cursor: pointer; border: none; background: none; }
   text-align: center;
   background: var(--forest);
   color: white;
-  padding: 90px 25px;
+  padding: 90px 24px;
+  box-sizing: border-box;
 }
 .countdown-grid {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
   max-width: 700px;
   margin: 40px auto 0;
   flex-wrap: wrap;
@@ -318,15 +357,15 @@ button { cursor: pointer; border: none; background: none; }
   border: 1px solid rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(8px);
   border-radius: 16px;
-  padding: 24px 28px;
-  min-width: 110px;
+  padding: 22px 24px;
+  min-width: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 .count-card b {
-  font: 500 clamp(2.2rem, 4vw, 3.4rem)/1 'Playfair Display', serif;
+  font: 500 clamp(2rem, 4vw, 3.4rem)/1 'Playfair Display', serif;
   color: var(--gold-light);
 }
 .count-card span {
@@ -338,11 +377,11 @@ button { cursor: pointer; border: none; background: none; }
 }
 
 /* Event Section & Calendar */
-.event-section { text-align: center; background: #f0eee6; padding: 110px 30px; }
+.event-section { text-align: center; background: #f0eee6; padding: 110px 24px; box-sizing: border-box; }
 .event-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 940px; margin: 50px auto 0; }
 .event-grid article {
   background: var(--paper);
-  padding: 48px 32px;
+  padding: 44px 28px;
   border-radius: 20px;
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
@@ -371,9 +410,10 @@ button { cursor: pointer; border: none; background: none; }
 
 /* RSVP SECTION */
 .rsvp-section {
-  padding: 110px 25px;
+  padding: 110px 24px;
   background: var(--paper);
   text-align: center;
+  box-sizing: border-box;
 }
 .rsvp-container {
   max-width: 680px;
@@ -381,9 +421,10 @@ button { cursor: pointer; border: none; background: none; }
   background: white;
   border: 1px solid var(--line);
   border-radius: 24px;
-  padding: 45px 35px;
+  padding: 45px 32px;
   box-shadow: var(--shadow-lg);
   text-align: left;
+  box-sizing: border-box;
 }
 .rsvp-form { display: grid; gap: 20px; }
 .rsvp-form label { display: grid; gap: 8px; font-size: 0.8rem; font-weight: 600; color: #4a5c53; }
@@ -430,12 +471,13 @@ button { cursor: pointer; border: none; background: none; }
 /* DIGITAL ENVELOPE / AMPLOP DIGITAL */
 .envelope-section {
   background: var(--cream);
-  padding: 110px 25px;
+  padding: 110px 24px;
   text-align: center;
+  box-sizing: border-box;
 }
 .bank-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
   gap: 24px;
   max-width: 900px;
   margin: 45px auto 0;
@@ -444,7 +486,7 @@ button { cursor: pointer; border: none; background: none; }
   background: white;
   border: 1px solid var(--line);
   border-radius: 20px;
-  padding: 35px 28px;
+  padding: 35px 24px;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -473,6 +515,7 @@ button { cursor: pointer; border: none; background: none; }
   letter-spacing: 0.06em;
   color: var(--ink);
   margin: 6px 0;
+  word-break: break-all;
 }
 .account-holder { font-size: 0.82rem; color: #708077; margin-bottom: 22px; }
 .copy-btn {
@@ -494,18 +537,20 @@ button { cursor: pointer; border: none; background: none; }
   background: white;
   border: 1px solid var(--line);
   border-radius: 20px;
-  padding: 35px 30px;
+  padding: 35px 24px;
   text-align: center;
   box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 .gift-address-card h4 { font: 500 1.5rem 'Playfair Display', serif; margin: 0 0 12px; color: var(--forest); }
 .gift-address-card p { color: #62736a; font-size: 0.9rem; line-height: 1.7; margin: 0 0 20px; }
 
 /* WISHES / BUKU TAMU SECTION */
 .wishes-section {
-  padding: 110px 25px;
+  padding: 110px 24px;
   background: var(--paper);
   text-align: center;
+  box-sizing: border-box;
 }
 .wishes-container {
   max-width: 780px;
@@ -517,9 +562,10 @@ button { cursor: pointer; border: none; background: none; }
   background: white;
   border: 1px solid var(--line);
   border-radius: 20px;
-  padding: 35px;
+  padding: 35px 24px;
   box-shadow: var(--shadow);
   text-align: left;
+  box-sizing: border-box;
 }
 .wish-form { display: grid; gap: 16px; }
 .wish-form input, .wish-form select, .wish-form textarea {
@@ -563,8 +609,9 @@ button { cursor: pointer; border: none; background: none; }
 .ticket-section {
   background: var(--forest);
   color: white;
-  padding: 90px 25px;
+  padding: 90px 24px;
   text-align: center;
+  box-sizing: border-box;
 }
 .ticket-card {
   max-width: 420px;
@@ -572,10 +619,11 @@ button { cursor: pointer; border: none; background: none; }
   background: white;
   color: var(--ink);
   border-radius: 24px;
-  padding: 35px 28px;
+  padding: 35px 24px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 .ticket-header { border-bottom: 1px dashed var(--line); padding-bottom: 18px; margin-bottom: 22px; }
 .ticket-header h4 { font: 500 1.6rem 'Playfair Display', serif; margin: 0 0 6px; color: var(--forest); }
@@ -616,7 +664,7 @@ button { cursor: pointer; border: none; background: none; }
 }
 
 /* GALLERY & LIGHTBOX */
-.gallery-section { padding: 100px max(25px, calc((100% - 1160px)/2)); background: var(--paper); }
+.gallery-section { padding: 100px max(24px, calc((100% - 1160px)/2)); background: var(--paper); box-sizing: border-box; }
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 45px; }
 .section-head > p { max-width: 340px; color: #6f7e76; line-height: 1.7; }
 .gallery-grid { height: 740px; display: grid; grid-template-columns: 1.1fr 0.9fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
@@ -731,14 +779,14 @@ button { cursor: pointer; border: none; background: none; }
 }
 
 /* CLOSING & FOOTER */
-.closing { text-align: center; background: #e6ece6; padding: 110px 25px; }
+.closing { text-align: center; background: #e6ece6; padding: 110px 24px; box-sizing: border-box; }
 .closing p { color: #6b7a72; }
-.closing h2 { font: 500 clamp(3.8rem, 8.5vw, 6.8rem) 'Playfair Display', serif; margin: 15px 0; }
+.closing h2 { font: 500 clamp(3.2rem, 8.5vw, 6.8rem) 'Playfair Display', serif; margin: 15px 0; word-break: break-word; }
 .closing span { letter-spacing: 0.18em; font-size: 0.75rem; }
 .invite-footer { background: var(--forest); color: #cad7d0; display: flex; justify-content: space-between; padding: 28px 5vw; font-size: 0.75rem; }
 .invite-footer a { text-decoration: underline; color: var(--gold-light); }
 
-/* EDITOR PAGE ENHANCEMENTS */
+/* EDITOR PAGE STYLING */
 .editor-shell { min-height: 100vh; display: grid; grid-template-columns: 290px 1fr; background: #f3f5f1; }
 .editor-side { background: var(--forest); color: white; padding: 35px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
 .editor-side .brand span { border-color: white; color: var(--forest); background: white; }
@@ -794,7 +842,7 @@ button { cursor: pointer; border: none; background: none; }
 .badge-attendance.tidak { background: #fde8e8; color: #9b2c2c; }
 .badge-attendance.ragu { background: #fef3c7; color: #92400e; }
 
-/* RESPONSIVE MOBILE LAYOUT OVERHAUL */
+/* 📱 RESPONSIVE MOBILE LAYOUT OVERHAUL */
 @media (max-width: 900px) {
   .story-section { grid-template-columns: 1fr; gap: 30px; }
   .couple-parents-grid { grid-template-columns: 1fr; text-align: center; gap: 20px; }
@@ -805,8 +853,62 @@ button { cursor: pointer; border: none; background: none; }
   .attendance-options { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 850px) {
-  .nav-links > a:not(.nav-cta) { display: none; }
+@media (max-width: 768px) {
+  /* HIDE TOP DESKTOP LINKS ON MOBILE SO NAVBAR NEVER OVERFLOWS HORIZONTALLY */
+  .invite-nav .nav-desktop-links {
+    display: none !important;
+  }
+  .invite-nav {
+    justify-content: center;
+    height: 56px;
+    padding: 0 16px;
+  }
+
+  /* SHOW NATIVE MOBILE BOTTOM TAB BAR */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 95;
+    background: rgba(16, 32, 25, 0.94);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 8px 4px;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -10px 25px rgba(0,0,0,0.25);
+  }
+  .mobile-bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #c0d1c8;
+    font-size: 0.65rem;
+    text-decoration: none;
+    gap: 3px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: color 0.2s;
+  }
+  .mobile-bottom-nav a span {
+    font-size: 1.15rem;
+  }
+  .mobile-bottom-nav a:hover, .mobile-bottom-nav a:active {
+    color: var(--gold-light);
+  }
+
+  /* MOVE MUSIC PLAYER WIDGET ON MOBILE ABOVE BOTTOM TAB BAR */
+  .music-player-widget {
+    bottom: 72px !important;
+    left: 14px !important;
+    padding: 8px 12px !important;
+    border-radius: 99px !important;
+    z-index: 90 !important;
+  }
+  .music-info span { display: none; } /* Compact music widget on mobile */
+
   .editor-shell { grid-template-columns: 1fr; }
   .editor-side { height: auto; position: relative; padding: 20px; display: flex; flex-direction: row; align-items: center; gap: 15px; }
   .editor-side > div, .editor-side nav { display: none; }
@@ -817,20 +919,18 @@ button { cursor: pointer; border: none; background: none; }
 
 @media (max-width: 560px) {
   .topbar { padding: 0 16px; }
-  .cover h1, .invite-hero h1 { font-size: 3.2rem; }
+  .cover h1, .invite-hero h1 { font-size: 2.8rem !important; }
   .cover-inner { padding: 30px 16px; }
-  .guest-card { padding: 20px 18px; margin: 25px auto 20px; }
-  .welcome, .story-section, .gallery-section, .countdown-section, .rsvp-section, .envelope-section, .wishes-section, .ticket-section { padding-block: 65px; padding-inline: 18px; }
-  .couple-card { padding: 30px 20px; border-radius: 18px; }
+  .guest-card { padding: 20px 18px; margin: 25px auto 20px; width: 100%; }
+  .welcome, .story-section, .gallery-section, .countdown-section, .rsvp-section, .envelope-section, .wishes-section, .ticket-section { padding-block: 60px; padding-inline: 16px; }
+  .couple-card { padding: 28px 18px; border-radius: 18px; }
   .gallery-grid { grid-template-columns: 1fr; gap: 12px; }
-  .gallery-grid .gallery-item { height: 310px !important; border-radius: 14px; }
+  .gallery-grid .gallery-item { height: 280px !important; border-radius: 14px; }
   .countdown-grid { gap: 10px; }
-  .count-card { padding: 18px 14px; min-width: 75px; flex: 1; }
-  .count-card b { font-size: 2rem; }
-  .count-card span { font-size: 0.62rem; }
-  .invite-footer { display: grid; gap: 8px; text-align: center; }
-  .music-player-widget { bottom: 15px; left: 15px; padding: 8px 14px; }
-  .music-info { font-size: 0.68rem; }
+  .count-card { padding: 18px 12px; min-width: 70px; flex: 1; }
+  .count-card b { font-size: 1.8rem; }
+  .count-card span { font-size: 0.6rem; }
+  .invite-footer { display: grid; gap: 8px; text-align: center; padding-bottom: 70px; }
   .editor-main { padding: 24px 14px; }
   .editor-top { display: grid; }
   .editor-actions { width: 100%; }

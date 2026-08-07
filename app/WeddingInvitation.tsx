@@ -342,12 +342,12 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       {/* Toast Notification */}
       {toastMsg && <div className="toast-notification">✓ {toastMsg}</div>}
 
-      {/* Navigation */}
+      {/* Desktop Navigation Topbar */}
       <nav className="invite-nav">
         <Link className="brand" href="/">
           <span>{brideInitial}{groomInitial}</span>
         </Link>
-        <div>
+        <div className="nav-desktop-links">
           <a href="#mempelai">Mempelai</a>
           <a href="#galeri">Galeri</a>
           <a href="#acara">Acara</a>
@@ -355,6 +355,30 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
           <a href="#amplop">Amplop</a>
           <a href="#ucapan">Buku Tamu</a>
         </div>
+      </nav>
+
+      {/* Native Mobile Bottom Tab Navigation */}
+      <nav className="mobile-bottom-nav">
+        <a href="#mempelai">
+          <span>💍</span>
+          <small>Mempelai</small>
+        </a>
+        <a href="#galeri">
+          <span>🖼️</span>
+          <small>Galeri</small>
+        </a>
+        <a href="#acara">
+          <span>📅</span>
+          <small>Acara</small>
+        </a>
+        <a href="#rsvp">
+          <span>💌</span>
+          <small>RSVP</small>
+        </a>
+        <a href="#ucapan">
+          <span>📖</span>
+          <small>Buku Tamu</small>
+        </a>
       </nav>
 
       {/* Hero Banner */}
