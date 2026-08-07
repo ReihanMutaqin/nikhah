@@ -100,6 +100,13 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
   const bankList = data?.bankAccounts?.length ? data.bankAccounts : defaultWedding.bankAccounts;
   const giftAddressInfo = data?.giftAddress || defaultWedding.giftAddress;
 
+  // Dynamic document title update for browser tab
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = `The Wedding of ${brideName} & ${groomName}`;
+    }
+  }, [brideName, groomName]);
+
   // 1. Subscribe to Firebase Realtime Database for global cross-device sync
   useEffect(() => {
     // LocalStorage fallback cache
@@ -290,7 +297,7 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       {/* Navigation */}
       <nav className="invite-nav">
         <Link className="brand" href="/">
-          <span>RT</span>
+          <span>{brideInitial}{groomInitial}</span>
         </Link>
         <div>
           <a href="#mempelai">Mempelai</a>

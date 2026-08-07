@@ -262,6 +262,19 @@ export default function EditorPage() {
     showToast("RSVP berhasil dihapus dari Firebase.");
   };
 
+  const brideName = data?.bride || defaultWedding.bride;
+  const groomName = data?.groom || defaultWedding.groom;
+  const couple = `${brideName} & ${groomName}`;
+  const brideInitial = brideName ? brideName[0] : "A";
+  const groomInitial = groomName ? groomName[0] : "B";
+  const initials = `${brideInitial}${groomInitial}`;
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = `Edit Undangan — ${couple}`;
+    }
+  }, [couple]);
+
   const totalAttending = rsvps
     .filter((r) => r.attendance === "hadir")
     .reduce((sum, r) => sum + (r.guestCount || 1), 0);
@@ -361,7 +374,7 @@ export default function EditorPage() {
 
       <aside className="editor-side">
         <Link className="brand" href="/">
-          <span>RT</span> Ruang Temu
+          <span>{initials}</span> {couple}
         </Link>
         <div>
           <p style={{ color: "#77ffbb", fontWeight: "bold" }}>🔥 FIREBASE REALTIME DB CONNECTED</p>
