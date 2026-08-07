@@ -34,6 +34,73 @@ function getGoogleCalendarUrl(title: string, details: string, location: string, 
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// CUSTOM VECTOR ICONS (No Browser Emojis)
+// ═══════════════════════════════════════════════════════════════════
+
+function IconEnvelopeSVG({ size = 20, fill = "currentColor" }: { size?: number; fill?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M22 6L12 13L2 6" stroke={fill} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function IconCalendarSVG({ size = 20, fill = "currentColor" }: { size?: number; fill?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="4" width="18" height="18" rx="2" stroke={fill} strokeWidth="2"/>
+      <path d="M16 2V6M8 2V6M3 10H21" stroke={fill} strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconRingSVG({ size = 20, fill = "currentColor" }: { size?: number; fill?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="14" r="5" stroke={fill} strokeWidth="2"/>
+      <circle cx="15" cy="14" r="5" stroke={fill} strokeWidth="2"/>
+      <path d="M9 9L12 5L15 9" stroke={fill} strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconGallerySVG({ size = 20, fill = "currentColor" }: { size?: number; fill?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke={fill} strokeWidth="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5" fill={fill}/>
+      <path d="M21 15L16 10L5 21" stroke={fill} strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconSparkleSVG({ size = 18, fill = "#c5a059" }: { size?: number; fill?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill={fill}/>
+    </svg>
+  );
+}
+
+function IconGiftSVG({ size = 20, fill = "currentColor" }: { size?: number; fill?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 12V22H4V12M2 7H22V12H2V7Z" stroke={fill} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M12 7V22M12 7H7.5C6 7 5 5.5 6 4C7 2.5 9 3 12 7ZM12 7H16.5C18 7 19 5.5 18 4C17 2.5 15 3 12 7Z" stroke={fill} strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconHeartSVG({ size = 18, fill = "#e87da0" }: { size?: number; fill?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 21.35L10.55 20.03C5.4 15.36 2 12.28 2 8.5C2 5.42 4.42 3 7.5 3C9.24 3 10.91 3.81 12 5.09C13.09 3.81 14.76 3 16.5 3C19.58 3 22 5.42 22 8.5C22 12.28 18.6 15.36 13.45 20.04L12 21.35Z" fill={fill}/>
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // LUSH BOTANICAL GARDEN VECTOR COLLECTION (Inspired by Viding #183)
 // Pink Hibiscus, Vine Branches, Butterflies, Golden Frames, Peacock
 // ═══════════════════════════════════════════════════════════════════
@@ -547,32 +614,36 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
         <img className="garden-gate-cover" src="/garden-gate.svg" alt="" />
         <img className="botanical-corner-art botanical-corner-art-left" src="/botanical-corner.svg" alt="" />
         <img className="botanical-corner-art botanical-corner-art-right" src="/botanical-corner.svg" alt="" />
-        <FloralCornerOrnament position="tl" />
-        <FloralCornerOrnament position="tr" />
-        <FloralCornerOrnament position="bl" />
-        <FloralCornerOrnament position="br" />
         <FloatingPetals />
 
-        <div className="cover-inner animated-fade-in" style={{ position: "relative" }}>
-          <div style={{ marginBottom: "12px" }}>
+        <div className="cover-inner animated-fade-in" style={{ position: "relative", zIndex: 10 }}>
+          <div style={{ marginBottom: "16px" }}>
             <WaxSealBadgeSVG />
           </div>
 
-          <span className="cute-font" style={{ color: "var(--gold-light)", fontSize: "2.3rem", display: "block", marginBottom: "4px" }}>
-            ✨ Save The Date! Kita Mau Nikah Niih! ✨
-          </span>
-          <p style={{ letterSpacing: "0.25em", opacity: 0.9, margin: 0 }}>THE WEDDING OF</p>
-          <h1 style={{ marginTop: "4px" }}>
+          <div style={{ background: "rgba(255, 255, 255, 0.94)", color: "#7a5c1e", border: "1.5px solid #d4b06a", borderRadius: "99px", padding: "6px 22px", display: "inline-flex", alignItems: "center", gap: "8px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", marginBottom: "16px" }}>
+            <IconSparkleSVG size={16} fill="#c5a059" />
+            <span className="cute-font" style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, color: "#7a5c1e" }}>
+              Save The Date! Kita Mau Nikah Niih!
+            </span>
+            <IconSparkleSVG size={16} fill="#c5a059" />
+          </div>
+
+          <p style={{ letterSpacing: "0.28em", color: "#ffffff", opacity: 0.95, margin: 0, fontSize: "0.82rem", fontWeight: 600, textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}>THE WEDDING OF</p>
+          <h1 style={{ marginTop: "6px", color: "#ffffff", textShadow: "0 3px 14px rgba(0,0,0,0.6)", fontSize: "3.2rem" }}>
             {brideName} <i>&amp;</i> {groomName}
           </h1>
-          <div className="guest-card" style={{ position: "relative", border: "2px dashed rgba(255,255,255,0.4)" }}>
+
+          <div className="guest-card" style={{ position: "relative", background: "rgba(255, 255, 255, 0.95)", border: "1.5px solid #d4b06a", borderRadius: "20px", padding: "20px 24px", color: "#1c3327", boxShadow: "0 14px 35px rgba(0,0,0,0.18)" }}>
             <div className="washi-tape-top" />
-            <small style={{ fontSize: "0.78rem" }}>Spesial Untuk Sahabat / Keluarga Kami:</small>
-            <strong style={{ fontSize: "1.45rem", color: "var(--forest)" }}>{guest}</strong>
-            <span style={{ fontSize: "0.78rem" }}>Mohon doa restunya yaa! Buka undangannya di bawah ini 💌</span>
+            <small style={{ fontSize: "0.82rem", color: "#666666", display: "block" }}>Spesial Untuk Sahabat / Keluarga Kami:</small>
+            <strong style={{ fontSize: "1.65rem", color: "#1b382d", fontWeight: 700, display: "block", margin: "6px 0" }}>{guest}</strong>
+            <span style={{ fontSize: "0.8rem", color: "#555555", display: "block" }}>Mohon doa restunya yaa! Buka undangannya di bawah ini</span>
           </div>
-          <button className="button light" onClick={handleOpenInvitation} style={{ borderRadius: "99px", padding: "14px 32px", fontSize: "0.95rem" }}>
-            💌 Buka Undangan Pernikahan
+
+          <button className="button primary" onClick={handleOpenInvitation} style={{ background: "#1b382d", color: "#ffffff", borderRadius: "99px", padding: "16px 36px", fontSize: "1rem", boxShadow: "0 10px 25px rgba(27,56,45,0.35)", display: "inline-flex", alignItems: "center", gap: "10px" }}>
+            <IconEnvelopeSVG size={20} fill="#ffffff" />
+            <span>Buka Undangan Pernikahan</span>
           </button>
         </div>
       </main>
@@ -617,23 +688,23 @@ export default function WeddingInvitation({ slug }: { slug: string }) {
       {/* Native Mobile Bottom Tab Navigation */}
       <nav className="mobile-bottom-nav">
         <a href="#mempelai">
-          <span>💍</span>
+          <IconRingSVG size={20} fill="#1b382d" />
           <small>Mempelai</small>
         </a>
         <a href="#galeri">
-          <span>🖼️</span>
+          <IconGallerySVG size={20} fill="#1b382d" />
           <small>Galeri</small>
         </a>
         <a href="#acara">
-          <span>📅</span>
+          <IconCalendarSVG size={20} fill="#1b382d" />
           <small>Acara</small>
         </a>
         <a href="#rsvp">
-          <span>💌</span>
+          <IconEnvelopeSVG size={20} fill="#1b382d" />
           <small>RSVP</small>
         </a>
         <a href="#ucapan">
-          <span>📖</span>
+          <IconHeartSVG size={20} fill="#e87da0" />
           <small>Buku Tamu</small>
         </a>
       </nav>
